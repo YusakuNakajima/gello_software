@@ -9,10 +9,10 @@ from gello.zmq_core.robot_node import ZMQServerRobot
 
 @dataclass
 class Args:
-    robot: str = "xarm"
+    robot: str = "ur"
     robot_port: int = 6001
     hostname: str = "127.0.0.1"
-    robot_ip: str = "192.168.1.10"
+    robot_ip: str = "192.168.58.42"
 
 
 def launch_robot_server(args: Args):
@@ -62,7 +62,7 @@ def launch_robot_server(args: Args):
         elif args.robot == "ur":
             from gello.robots.ur import URRobot
 
-            robot = URRobot(robot_ip=args.robot_ip)
+            robot = URRobot(robot_ip=args.robot_ip,no_gripper=True)
         elif args.robot == "panda":
             from gello.robots.panda import PandaRobot
 
