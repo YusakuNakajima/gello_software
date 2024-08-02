@@ -1,6 +1,8 @@
 # keep each top level section alphabetical
 # keep each item within the sections alphabetical
 
+venv/
+
 # large files
 *.png
 *.gif
