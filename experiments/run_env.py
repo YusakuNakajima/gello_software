@@ -41,6 +41,7 @@ class Args:
     data_dir: str = "~/bc_data"
     bimanual: bool = False
     verbose: bool = False
+    no_gripper: bool = True
 
 
 def main(args):
@@ -116,13 +117,19 @@ def main(args):
                         "No gello port found, please specify one or plug in gello"
                     )
             if args.start_joints is None:
-                reset_joints = np.deg2rad(
-                    [0, -90, 90, -90, -90, 0, 0]
+                if args.no_gripper:
+                    reset_joints = np.deg2rad(
+                        [0, -90, 90, -90, -90, 0]
+                    )
+                else:
+                    reset_joints = np.deg2rad(
+                    [0, -90, 90, -90, -90, 0,0]
                 )  # Change this to your own reset joints
             else:
                 reset_joints = args.start_joints
             agent = GelloAgent(port=gello_port, start_joints=args.start_joints)
-            curr_joints = env.get_obs()["joint_positions"]
+            curr_joints = np.array(env.get_obs()["joint_positions"])
+
             if reset_joints.shape == curr_joints.shape:
                 max_delta = (np.abs(curr_joints - reset_joints)).max()
                 steps = min(int(max_delta / 0.01), 100)
@@ -150,6 +157,8 @@ def main(args):
     start_pos = agent.act(env.get_obs())
     obs = env.get_obs()
     joints = obs["joint_positions"]
+    if args.no_gripper:
+        start_pos = start_pos[0:-1]
 
     abs_deltas = np.abs(start_pos - joints)
     id_max_joint_delta = np.argmax(abs_deltas)
@@ -180,6 +189,8 @@ def main(args):
         obs = env.get_obs()
         command_joints = agent.act(obs)
         current_joints = obs["joint_positions"]
+        if args.no_gripper:
+            command_joints = command_joints[0:-1]
         delta = command_joints - current_joints
         max_joint_delta = np.abs(delta).max()
         if max_joint_delta > max_delta:
@@ -189,6 +200,8 @@ def main(args):
     obs = env.get_obs()
     joints = obs["joint_positions"]
     action = agent.act(obs)
+    if args.no_gripper:
+            action = action[0:-1]
     if (action - joints > 0.5).any():
         print("Action is too big")
 
@@ -220,6 +233,8 @@ def main(args):
             flush=True,
         )
         action = agent.act(obs)
+        if args.no_gripper:
+            action = action[0:-1]
         dt = datetime.datetime.now()
         if args.use_save_interface:
             state = kb_interface.update()
