@@ -4,8 +4,8 @@ from typing import Dict, Optional, Sequence, Tuple
 
 import numpy as np
 
-from gello.agents.agent import Agent
-from gello.robots.dynamixel import DynamixelRobot
+from gello_ros.agents.agent import Agent
+from gello_ros.robots.dynamixel import DynamixelRobot
 
 
 @dataclass
