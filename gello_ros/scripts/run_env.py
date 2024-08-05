@@ -37,7 +37,8 @@ class Args:
     robot_type: str = None  # only needed for quest agent or spacemouse agent
     hz: int = 100
     start_joints: List[float] = field(
-        default_factory=lambda: np.deg2rad([0, -90, 90, -90, -90, 0, 0]).tolist()
+        # default_factory=lambda: np.deg2rad([0, -90, 90, -90, -90, 0, 0]).tolist()
+        default_factory=lambda: np.deg2rad([0, 0, 90, 0, 90, 0, 0]).tolist()
     )
 
     gello_port: Optional[str] = None
@@ -167,6 +168,12 @@ def main(args):
         from gello_ros.data_utils.keyboard_interface import KBReset
 
         kb_interface = KBReset()
+    
+    # soft startup
+    for i in range(100):
+    action = agent.act(obs)
+    obs = env.step(action)
+
 
     print_color("\nStart 🚀🚀🚀", color="green", attrs=("bold",))
 
