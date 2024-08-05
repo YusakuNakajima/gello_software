@@ -13,7 +13,6 @@ class ROSRobot(Robot):
     """A class representing a UR robot."""
 
     def __init__(self, no_gripper: bool = True):
-
         if not no_gripper:
             print("supposed only no gripper")
             exit()
@@ -26,8 +25,10 @@ class ROSRobot(Robot):
             "wrist_2_joint",
             "wrist_3_joint",
         ]
+        # controller_name = "/scaled_pos_joint_traj_controller/command"
+        controller_name = "/cobotta/arm_controller/command"
         self.trajectory_publisher = rospy.Publisher(
-            "/scaled_pos_joint_traj_controller/command", JointTrajectory, queue_size=10
+            controller_name, JointTrajectory, queue_size=10
         )
         self._use_gripper = not no_gripper
 
