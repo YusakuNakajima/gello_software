@@ -2,9 +2,9 @@
 import datetime
 import glob
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 import numpy as np
 import tyro
@@ -36,13 +36,14 @@ class Args:
     hostname: str = "127.0.0.1"
     robot_type: str = None  # only needed for quest agent or spacemouse agent
     hz: int = 100
-    start_joints: Optional[Tuple[float, ...]] = None
+    start_joints: List[float] = field(
+        default_factory=lambda: np.deg2rad([0, -90, 90, -90, -90, 0, 0]).tolist()
+    )
 
     gello_port: Optional[str] = None
     mock: bool = False
     use_save_interface: bool = False
     data_dir: str = "~/bc_data"
-    bimanual: bool = False
     verbose: bool = False
     no_gripper: bool = True
 
@@ -61,132 +62,77 @@ def main(args):
         robot_client = ZMQClientRobot(port=args.robot_port, host=args.hostname)
     env = RobotEnv(robot_client, control_rate_hz=args.hz, camera_dict=camera_clients)
 
-    if args.bimanual:
-        if args.agent == "gello":
-            # dynamixel control box port map (to distinguish left and right gello)
-            right = "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6A-if00-port0"
-            left = "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBEIA-if00-port0"
-            left_agent = GelloAgent(port=left)
-            right_agent = GelloAgent(port=right)
-            agent = BimanualAgent(left_agent, right_agent)
-        elif args.agent == "quest":
-            from gello_ros.agents.quest_agent import SingleArmQuestAgent
-
-            left_agent = SingleArmQuestAgent(robot_type=args.robot_type, which_hand="l")
-            right_agent = SingleArmQuestAgent(
-                robot_type=args.robot_type, which_hand="r"
-            )
-            agent = BimanualAgent(left_agent, right_agent)
-            # raise NotImplementedError
-        elif args.agent == "spacemouse":
-            from gello_ros.agents.spacemouse_agent import SpacemouseAgent
-
-            left_path = "/dev/hidraw0"
-            right_path = "/dev/hidraw1"
-            left_agent = SpacemouseAgent(
-                robot_type=args.robot_type, device_path=left_path, verbose=args.verbose
-            )
-            right_agent = SpacemouseAgent(
-                robot_type=args.robot_type,
-                device_path=right_path,
-                verbose=args.verbose,
-                invert_button=True,
-            )
-            agent = BimanualAgent(left_agent, right_agent)
-        else:
-            raise ValueError(f"Invalid agent name for bimanual: {args.agent}")
-
-        # System setup specific. This reset configuration works well on our setup. If you are mounting the robot
-        # differently, you need a separate reset joint configuration.
-        reset_joints_left = np.deg2rad([0, -90, -90, -90, 90, 0, 0])
-        reset_joints_right = np.deg2rad([0, -90, 90, -90, -90, 0, 0])
-        reset_joints = np.concatenate([reset_joints_left, reset_joints_right])
-        curr_joints = env.get_obs()["joint_positions"]
-        max_delta = (np.abs(curr_joints - reset_joints)).max()
-        steps = min(int(max_delta / 0.01), 100)
-
-        for jnt in np.linspace(curr_joints, reset_joints, steps):
-            env.step(jnt)
-    else:
-        if args.agent == "gello":
-            gello_port = args.gello_port
-            if gello_port is None:
-                usb_ports = glob.glob("/dev/serial/by-id/*")
-                print(f"Found {len(usb_ports)} ports")
-                if len(usb_ports) > 0:
-                    gello_port = usb_ports[0]
-                    print(f"using port {gello_port}")
-                else:
-                    raise ValueError(
-                        "No gello port found, please specify one or plug in gello"
-                    )
-            if args.start_joints is None:
-                if args.no_gripper:
-                    reset_joints = np.deg2rad([0, -90, 90, -90, -90, 0])
-                else:
-                    reset_joints = np.deg2rad(
-                        [0, -90, 90, -90, -90, 0, 0]
-                    )  # Change this to your own reset joints
+    if args.agent == "gello":
+        print("Using Gello agent")
+        gello_port = args.gello_port
+        if gello_port is None:
+            usb_ports = glob.glob("/dev/serial/by-id/*")
+            print(f"Found {len(usb_ports)} ports")
+            if len(usb_ports) > 0:
+                gello_port = usb_ports[0]
+                print(f"using port {gello_port}")
             else:
-                reset_joints = args.start_joints
-            agent = GelloAgent(port=gello_port, start_joints=args.start_joints)
-            curr_joints = np.array(env.get_obs()["joint_positions"])
+                raise ValueError(
+                    "No gello port found, please specify one or plug in gello"
+                )
 
-            if reset_joints.shape == curr_joints.shape:
-                max_delta = (np.abs(curr_joints - reset_joints)).max()
-                steps = min(int(max_delta / 0.01), 100)
+        gello_reset_joints = np.array(args.start_joints)
+        agent = GelloAgent(port=gello_port, start_joints=gello_reset_joints)
+        gello_curr_joints = np.array(env.get_obs()["joint_positions"])
 
-                for jnt in np.linspace(curr_joints, reset_joints, steps):
-                    env.step(jnt)
-                    time.sleep(0.001)
-        elif args.agent == "quest":
-            from gello_ros.agents.quest_agent import SingleArmQuestAgent
+        if gello_reset_joints.shape == gello_curr_joints.shape:
+            max_delta = (np.abs(gello_curr_joints - gello_reset_joints)).max()
+            steps = min(int(max_delta / 0.01), 100)
+            for jnt in np.linspace(gello_curr_joints, gello_reset_joints, steps):
+                env.step(jnt)
+                time.sleep(0.001)
 
-            agent = SingleArmQuestAgent(robot_type=args.robot_type, which_hand="l")
-        elif args.agent == "spacemouse":
-            from gello_ros.agents.spacemouse_agent import SpacemouseAgent
+    elif args.agent == "quest":
+        from gello_ros.agents.quest_agent import SingleArmQuestAgent
 
-            agent = SpacemouseAgent(robot_type=args.robot_type, verbose=args.verbose)
-        elif args.agent == "dummy" or args.agent == "none":
-            agent = DummyAgent(num_dofs=robot_client.num_dofs())
-        elif args.agent == "policy":
-            raise NotImplementedError("add your imitation policy here if there is one")
-        else:
-            raise ValueError("Invalid agent name")
+        agent = SingleArmQuestAgent(robot_type=args.robot_type, which_hand="l")
+    elif args.agent == "spacemouse":
+        from gello_ros.agents.spacemouse_agent import SpacemouseAgent
+
+        agent = SpacemouseAgent(robot_type=args.robot_type, verbose=args.verbose)
+    elif args.agent == "dummy" or args.agent == "none":
+        agent = DummyAgent(num_dofs=robot_client.num_dofs())
+    elif args.agent == "policy":
+        raise NotImplementedError("add your imitation policy here if there is one")
+    else:
+        raise ValueError("Invalid agent name")
 
     # going to start position
     print("Going to start position")
-    start_pos = agent.act(env.get_obs())
-    obs = env.get_obs()
-    joints = obs["joint_positions"]
+    agent_start_pos = agent.act(env.get_obs())
     if args.no_gripper:
-        start_pos = start_pos[0:-1]
-    print("Start pos: ", start_pos)
-    print("Joints: ", joints)
+        agent_start_pos = agent_start_pos[0:-1]
+    obs = env.get_obs()
+    robot_joints = obs["joint_positions"]
 
-    abs_deltas = np.abs(start_pos - joints)
+    abs_deltas = np.abs(agent_start_pos - robot_joints)
     id_max_joint_delta = np.argmax(abs_deltas)
-
+    print(f"Agent start pos: {agent_start_pos}", f"Robot joints: {robot_joints}")
     max_joint_delta = 0.8
     if abs_deltas[id_max_joint_delta] > max_joint_delta:
+        print("Joint deltas are too big, please check the following joints")
+
         id_mask = abs_deltas > max_joint_delta
-        print()
         ids = np.arange(len(id_mask))[id_mask]
         for i, delta, joint, current_j in zip(
             ids,
             abs_deltas[id_mask],
-            start_pos[id_mask],
-            joints[id_mask],
+            agent_start_pos[id_mask],
+            robot_joints[id_mask],
         ):
             print(
                 f"joint[{i}]: \t delta: {delta:4.3f} , leader: \t{joint:4.3f} , follower: \t{current_j:4.3f}"
             )
         return
 
-    print(f"Start pos: {len(start_pos)}", f"Joints: {len(joints)}")
-    assert len(start_pos) == len(
-        joints
-    ), f"agent output dim = {len(start_pos)}, but env dim = {len(joints)}"
+    assert len(agent_start_pos) == len(
+        robot_joints
+    ), f"agent output dim = {len(agent_start_pos)}, but env dim = {len(robot_joints)}"
 
     max_delta = 0.05
     for _ in range(25):

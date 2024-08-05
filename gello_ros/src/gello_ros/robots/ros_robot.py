@@ -6,6 +6,8 @@ from gello_ros.robots.robot import Robot
 
 import rospy
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Float64
+
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
@@ -17,7 +19,7 @@ class ROSRobot(Robot):
             print("supposed only no gripper")
             exit()
         rospy.Subscriber("/joint_states", JointState, self.joint_state_callback)
-        self.joint_names = [
+        self.joint_names_order = [
             "shoulder_pan_joint",
             "shoulder_lift_joint",
             "elbow_joint",
@@ -28,13 +30,19 @@ class ROSRobot(Robot):
         # controller_name = "/scaled_pos_joint_traj_controller/command"
         controller_name = "/cobotta/arm_controller/command"
         self.trajectory_publisher = rospy.Publisher(
-            controller_name, JointTrajectory, queue_size=10
+            controller_name, JointTrajectory, queue_size=1
         )
+        # self.joint_publishers = {
+        #     name: rospy.Publisher(
+        #         f"/{name}_position_controller/command", Float64, queue_size=10
+        #     )
+        #     for name in self.joint_names_order
+        # }
+
         self._use_gripper = not no_gripper
 
     def joint_state_callback(self, msg: JointState):
-        self.robot_joints = np.array(msg.position)
-        # print(self.robot_joints)
+        self.ros_joint_state = msg
 
     def num_dofs(self) -> int:
         """Get the number of joints of the robot.
@@ -52,6 +60,16 @@ class ROSRobot(Robot):
         Returns:
             T: The current state of the leader robot.
         """
+
+        # Create a dictionary for easy lookup
+        joint_positions_dict = dict(
+            zip(self.ros_joint_state.name, self.ros_joint_state.position)
+        )
+        # Reorder the joints according to self.joint_names
+        self.robot_joints = np.array(
+            [joint_positions_dict[name] for name in self.joint_names_order]
+        )
+
         return self.robot_joints
 
     def command_joint_state(self, joint_state: np.ndarray) -> None:
@@ -61,13 +79,15 @@ class ROSRobot(Robot):
             joint_state (np.ndarray): The state to command the leader robot to.
         """
         trajectory_msg = JointTrajectory()
-        trajectory_msg.joint_names = self.joint_names
+        trajectory_msg.joint_names = self.joint_names_order
         point = JointTrajectoryPoint()
         point.positions = joint_state[:6]
-        point.time_from_start = rospy.Duration(0.01)  # Move immediately
+        point.time_from_start = rospy.Duration(0.001)  # Move immediately
         trajectory_msg.points = [point]
-
         self.trajectory_publisher.publish(trajectory_msg)
+
+        # for i, name in enumerate(self.joint_names_order):
+        #     self.joint_publishers[name].publish(Float64(joint_state[i]))
 
     def get_observations(self) -> Dict[str, np.ndarray]:
         joints = self.get_joint_state()
