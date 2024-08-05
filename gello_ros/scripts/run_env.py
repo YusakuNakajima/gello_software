@@ -137,8 +137,8 @@ def main(args):
     ), f"agent output dim = {len(agent_start_pos)}, but env dim = {len(robot_joints)}"
 
     # soft startup
-    max_delta = 0.001
-    for _ in range(1000):
+    max_delta = 0.003
+    for _ in range(100):
         obs = env.get_obs()
         command_joints = agent.act(obs)
         current_joints = obs["joint_positions"]

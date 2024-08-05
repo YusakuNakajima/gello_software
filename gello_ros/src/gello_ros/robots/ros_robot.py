@@ -113,6 +113,8 @@ class ROSRobot(Robot):
                     self._min_traj_dur,
                 )
             )
+        print("dur", round(max(dur), 2))
+        # set the target convergence time of the JTC to match the joint that tasks the longest time to move
         point.time_from_start = rospy.Duration(max(dur) / self._speed_scale)
         trajectory_msg.points.append(point)
         self.trajectory_publisher.publish(trajectory_msg)
