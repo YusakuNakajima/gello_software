@@ -19,27 +19,29 @@ class ROSRobot(Robot):
             print("supposed only no gripper")
             exit()
         rospy.Subscriber("/joint_states", JointState, self.joint_state_callback)
-        # self.joint_names_order = [
-        #     "shoulder_pan_joint",
-        #     "shoulder_lift_joint",
-        #     "elbow_joint",
-        #     "wrist_1_joint",
-        #     "wrist_2_joint",
-        #     "wrist_3_joint",
-        # ]
-        # controller_name = "/scaled_pos_joint_traj_controller/command"
         self.joint_names_order = [
-            "joint_1",
-            "joint_2",
-            "joint_3",
-            "joint_4",
-            "joint_5",
-            "joint_6",
+            "shoulder_pan_joint",
+            "shoulder_lift_joint",
+            "elbow_joint",
+            "wrist_1_joint",
+            "wrist_2_joint",
+            "wrist_3_joint",
         ]
-        controller_name = "/cobotta/arm_controller/command"
+        controller_name = "/scaled_pos_joint_traj_controller/command"
+        # self.joint_names_order = [
+        #     "joint_1",
+        #     "joint_2",
+        #     "joint_3",
+        #     "joint_4",
+        #     "joint_5",
+        #     "joint_6",
+        # ]
+        # controller_name = "/cobotta/arm_controller/command"
+
         self.trajectory_publisher = rospy.Publisher(
             controller_name, JointTrajectory, queue_size=1
         )
+
         # self.joint_publishers = {
         #     name: rospy.Publisher(
         #         f"/{name}_position_controller/command", Float64, queue_size=10

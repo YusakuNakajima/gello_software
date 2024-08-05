@@ -37,8 +37,8 @@ class Args:
     robot_type: str = None  # only needed for quest agent or spacemouse agent
     hz: int = 100
     start_joints: List[float] = field(
-        # default_factory=lambda: np.deg2rad([0, -90, 90, -90, -90, 0, 0]).tolist()
-        default_factory=lambda: np.deg2rad([0, 0, 90, 0, 90, 0, 0]).tolist()
+        default_factory=lambda: np.deg2rad([0, -90, 90, -90, -90, 0, 0]).tolist()
+        # default_factory=lambda: np.deg2rad([0, 0, 90, 0, 90, 0, 0]).tolist()
     )
 
     gello_port: Optional[str] = None
@@ -111,6 +111,7 @@ def main(args):
     obs = env.get_obs()
     robot_joints = obs["joint_positions"]
 
+    # check if the joints are close
     abs_deltas = np.abs(agent_start_pos - robot_joints)
     id_max_joint_delta = np.argmax(abs_deltas)
     print(f"Agent start pos: {agent_start_pos}", f"Robot joints: {robot_joints}")
@@ -135,8 +136,9 @@ def main(args):
         robot_joints
     ), f"agent output dim = {len(agent_start_pos)}, but env dim = {len(robot_joints)}"
 
-    max_delta = 0.05
-    for _ in range(25):
+    # soft startup
+    max_delta = 0.005
+    for _ in range(100):
         obs = env.get_obs()
         command_joints = agent.act(obs)
         current_joints = obs["joint_positions"]
@@ -148,6 +150,7 @@ def main(args):
             delta = delta / max_joint_delta * max_delta
         env.step(current_joints + delta)
 
+    # check if the joints are close
     obs = env.get_obs()
     joints = obs["joint_positions"]
     action = agent.act(obs)
@@ -169,10 +172,7 @@ def main(args):
 
         kb_interface = KBReset()
 
-    # soft startup
-    # for i in range(100):
-    # action = agent.act(obs)
-    # obs = env.step(action)
+    exit()
 
     print_color("\nStart 🚀🚀🚀", color="green", attrs=("bold",))
 
