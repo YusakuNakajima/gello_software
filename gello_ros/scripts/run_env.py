@@ -168,12 +168,11 @@ def main(args):
         from gello_ros.data_utils.keyboard_interface import KBReset
 
         kb_interface = KBReset()
-    
-    # soft startup
-    for i in range(100):
-    action = agent.act(obs)
-    obs = env.step(action)
 
+    # soft startup
+    # for i in range(100):
+    # action = agent.act(obs)
+    # obs = env.step(action)
 
     print_color("\nStart 🚀🚀🚀", color="green", attrs=("bold",))
 
