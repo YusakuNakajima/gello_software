@@ -6,6 +6,8 @@ from gello_ros.robots.robot import Robot
 
 import rospy
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Float64
+
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
@@ -27,8 +29,15 @@ class ROSRobot(Robot):
             "wrist_3_joint",
         ]
         self.trajectory_publisher = rospy.Publisher(
-            "/scaled_pos_joint_traj_controller/command", JointTrajectory, queue_size=10
+            "/scaled_pos_joint_traj_controller/command", JointTrajectory, queue_size=1
         )
+        # self.joint_publishers = {
+        #     name: rospy.Publisher(
+        #         f"/{name}_position_controller/command", Float64, queue_size=10
+        #     )
+        #     for name in self.joint_names_order
+        # }
+
         self._use_gripper = not no_gripper
 
     def joint_state_callback(self, msg: JointState):
@@ -72,10 +81,12 @@ class ROSRobot(Robot):
         trajectory_msg.joint_names = self.joint_names_order
         point = JointTrajectoryPoint()
         point.positions = joint_state[:6]
-        point.time_from_start = rospy.Duration(0.01)  # Move immediately
+        point.time_from_start = rospy.Duration(0.001)  # Move immediately
         trajectory_msg.points = [point]
-
         self.trajectory_publisher.publish(trajectory_msg)
+
+        # for i, name in enumerate(self.joint_names_order):
+        #     self.joint_publishers[name].publish(Float64(joint_state[i]))
 
     def get_observations(self) -> Dict[str, np.ndarray]:
         joints = self.get_joint_state()
