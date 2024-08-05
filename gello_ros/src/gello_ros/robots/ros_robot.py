@@ -19,24 +19,33 @@ class ROSRobot(Robot):
             print("supposed only no gripper")
             exit()
         rospy.Subscriber("/joint_states", JointState, self.joint_state_callback)
-        self.joint_names_order = [
-            "shoulder_pan_joint",
-            "shoulder_lift_joint",
-            "elbow_joint",
-            "wrist_1_joint",
-            "wrist_2_joint",
-            "wrist_3_joint",
-        ]
-        controller_name = "/scaled_pos_joint_traj_controller/command"
         # self.joint_names_order = [
-        #     "joint_1",
-        #     "joint_2",
-        #     "joint_3",
-        #     "joint_4",
-        #     "joint_5",
-        #     "joint_6",
+        #     "shoulder_pan_joint",
+        #     "shoulder_lift_joint",
+        #     "elbow_joint",
+        #     "wrist_1_joint",
+        #     "wrist_2_joint",
+        #     "wrist_3_joint",
         # ]
-        # controller_name = "/cobotta/arm_controller/command"
+        # controller_name = "/scaled_pos_joint_traj_controller/command"
+
+        self.max_vel = [
+            0.383012504350156,
+            0.37256670877697,
+            0.68942250783028,
+            0.702189591308619,
+            1.05386470893922,
+            0.383012504350156,
+        ]
+        self.joint_names_order = [
+            "joint_1",
+            "joint_2",
+            "joint_3",
+            "joint_4",
+            "joint_5",
+            "joint_6",
+        ]
+        controller_name = "/cobotta/arm_controller/command"
 
         self.trajectory_publisher = rospy.Publisher(
             controller_name, JointTrajectory, queue_size=1
@@ -49,6 +58,9 @@ class ROSRobot(Robot):
         #     for name in self.joint_names_order
         # }
 
+        control_freq = 100
+        self._min_traj_dur = 5.0 / control_freq
+        self._speed_scale = 1
         self._use_gripper = not no_gripper
 
     def joint_state_callback(self, msg: JointState):
@@ -91,9 +103,18 @@ class ROSRobot(Robot):
         trajectory_msg = JointTrajectory()
         trajectory_msg.joint_names = self.joint_names_order
         point = JointTrajectoryPoint()
-        point.positions = joint_state[:6]
-        point.time_from_start = rospy.Duration(0.001)  # Move immediately
-        trajectory_msg.points = [point]
+        dur = []
+        current_robot_joints = self.get_joint_state()
+        for i, name in enumerate(trajectory_msg.joint_names):
+            point.positions.append(joint_state[i])
+            dur.append(
+                max(
+                    abs(joint_state[i] - current_robot_joints[i]) / self.max_vel[i],
+                    self._min_traj_dur,
+                )
+            )
+        point.time_from_start = rospy.Duration(max(dur) / self._speed_scale)
+        trajectory_msg.points.append(point)
         self.trajectory_publisher.publish(trajectory_msg)
 
         # for i, name in enumerate(self.joint_names_order):
