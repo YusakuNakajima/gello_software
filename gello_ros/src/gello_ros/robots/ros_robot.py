@@ -19,6 +19,8 @@ class ROSRobot(Robot):
             print("supposed only no gripper")
             exit()
         rospy.Subscriber("/joint_states", JointState, self.joint_state_callback)
+
+        # for UR
         # self.joint_names_order = [
         #     "shoulder_pan_joint",
         #     "shoulder_lift_joint",
@@ -29,6 +31,7 @@ class ROSRobot(Robot):
         # ]
         # controller_name = "/scaled_pos_joint_traj_controller/command"
 
+        # for cobotta
         self.max_vel = [
             0.383012504350156,
             0.37256670877697,
@@ -51,16 +54,9 @@ class ROSRobot(Robot):
             controller_name, JointTrajectory, queue_size=1
         )
 
-        # self.joint_publishers = {
-        #     name: rospy.Publisher(
-        #         f"/{name}_position_controller/command", Float64, queue_size=10
-        #     )
-        #     for name in self.joint_names_order
-        # }
-
         control_freq = 100
         self._min_traj_dur = 5.0 / control_freq
-        self._speed_scale = 1
+        self._speed_scale = 0.5
         self._use_gripper = not no_gripper
 
     def joint_state_callback(self, msg: JointState):
@@ -113,14 +109,11 @@ class ROSRobot(Robot):
                     self._min_traj_dur,
                 )
             )
-        print("dur", round(max(dur), 2))
+
         # set the target convergence time of the JTC to match the joint that tasks the longest time to move
         point.time_from_start = rospy.Duration(max(dur) / self._speed_scale)
         trajectory_msg.points.append(point)
         self.trajectory_publisher.publish(trajectory_msg)
-
-        # for i, name in enumerate(self.joint_names_order):
-        #     self.joint_publishers[name].publish(Float64(joint_state[i]))
 
     def get_observations(self) -> Dict[str, np.ndarray]:
         joints = self.get_joint_state()
