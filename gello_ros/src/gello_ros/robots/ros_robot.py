@@ -36,9 +36,17 @@ class ROSRobot(Robot):
             0.383012504350156,
             0.37256670877697,
             0.68942250783028,
-            0.702189591308619,
+            0.602189591308619,
+            0.602189591308619,
             1.05386470893922,
-            0.383012504350156,
+        ]
+        self.joint_pos_limits = [
+            {"name": "joint_1", "lower": -2.617994, "upper": 2.617994},
+            {"name": "joint_2", "lower": -1.047198, "upper": 1.745329},
+            {"name": "joint_3", "lower": 0.3141593, "upper": 2.443461},
+            {"name": "joint_4", "lower": -2.96706, "upper": 2.96706},
+            {"name": "joint_5", "lower": -1.658063, "upper": 2.356194},
+            {"name": "joint_6", "lower": -2.96706, "upper": 2.96706},
         ]
         self.joint_names_order = [
             "joint_1",
@@ -56,7 +64,7 @@ class ROSRobot(Robot):
 
         control_freq = 100
         self._min_traj_dur = 5.0 / control_freq
-        self._speed_scale = 0.5
+        self._speed_scale = 0.7
         self._use_gripper = not no_gripper
 
     def joint_state_callback(self, msg: JointState):
@@ -102,7 +110,22 @@ class ROSRobot(Robot):
         dur = []
         current_robot_joints = self.get_joint_state()
         for i, name in enumerate(trajectory_msg.joint_names):
-            point.positions.append(joint_state[i])
+            pos = joint_state[i]
+            pos_lower = next(
+                joint["lower"]
+                for joint in self.joint_pos_limits
+                if joint["name"] == name
+            )
+            pos_upper = next(
+                joint["upper"]
+                for joint in self.joint_pos_limits
+                if joint["name"] == name
+            )
+            if pos < pos_lower:
+                pos = pos_lower
+            elif pos > pos_upper:
+                pos = pos_upper
+            point.positions.append(pos)
             dur.append(
                 max(
                     abs(joint_state[i] - current_robot_joints[i]) / self.max_vel[i],
