@@ -64,7 +64,7 @@ class ROSRobot(Robot):
 
         control_freq = 100
         self._min_traj_dur = 5.0 / control_freq
-        self._speed_scale = 0.7
+        self._speed_scale = 1
         self._use_gripper = not no_gripper
 
     def joint_state_callback(self, msg: JointState):
