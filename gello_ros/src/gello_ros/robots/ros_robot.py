@@ -126,6 +126,7 @@ class ROSRobot(Robot):
             elif pos > pos_upper:
                 pos = pos_upper
             point.positions.append(pos)
+
             dur.append(
                 max(
                     abs(joint_state[i] - current_robot_joints[i]) / self.max_vel[i],

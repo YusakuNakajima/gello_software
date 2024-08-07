@@ -38,7 +38,7 @@ class Args:
     hz: int = 100
     start_joints: List[float] = field(
         # default_factory=lambda: np.deg2rad([0, -90, 90, -90, -90, 0, 0]).tolist()
-        default_factory=lambda: np.deg2rad([0, 0, 90, 0, 90, 0, 0]).tolist()
+        default_factory=lambda: np.deg2rad([0, 0, 90, 0, 0, 0, 0]).tolist()
     )
 
     gello_port: Optional[str] = None

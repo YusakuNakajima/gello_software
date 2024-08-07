@@ -1,0 +1,11 @@
+<launch>
+  <!-- Launch the first node (launch_nodes.py) -->
+  <node name="launch_nodes" pkg="gello_ros" type="launch_nodes.py" output="screen">
+    <!-- Add any required parameters or arguments for launch_nodes.py here -->
+  </node>
+
+  <!-- Launch the second node (run_env.py) -->
+  <node name="run_env" pkg="gello_ros" type="run_env.py" output="screen">
+    <!-- Add any required parameters or arguments for run_env.py here -->
+  </node>
+</launch>
