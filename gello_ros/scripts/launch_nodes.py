@@ -15,7 +15,7 @@ class Args:
     robot: str = "ros"
     robot_port: int = 6001
     hostname: str = "127.0.0.1"
-    robot_ip: str = "192.168.58.42"
+    robot_ip: str = "192.168.58.2"
 
 
 def launch_robot_server(args: Args):
