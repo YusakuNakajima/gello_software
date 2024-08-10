@@ -122,9 +122,9 @@ PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
         joint_ids=(1, 2, 3, 4, 5, 6),
         joint_offsets=(
             3 * np.pi / 2,
-            4 * np.pi / 2,
+            0 * np.pi / 2,
             2 * np.pi / 2,
-            2 * np.pi / 2,
+            6 * np.pi / 2,
             3 * np.pi / 2,
             3 * np.pi / 2,
         ),
@@ -153,8 +153,9 @@ class GelloAgent(Agent):
             self._robot = config.make_robot(port=port, start_joints=start_joints)
 
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
-        return self._robot.get_joint_state()
         dyna_joints = self._robot.get_joint_state()
+        # dyna_joints[4] += np.pi / 4 # for DENSO robot
+        return dyna_joints
         # current_q = dyna_joints[:-1]  # last one dim is the gripper
         current_gripper = dyna_joints[-1]  # last one dim is the gripper
 

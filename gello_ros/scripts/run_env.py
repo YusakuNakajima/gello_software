@@ -158,6 +158,8 @@ def main(args):
         action = action[0:-1]
     if (action - joints > 0.5).any():
         print("Action is too big")
+        print("action", action)
+        print("jpints", joints)
 
         # print which joints are too big
         joint_index = np.where(action - joints > 0.8)
