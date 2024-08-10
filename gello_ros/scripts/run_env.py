@@ -37,8 +37,11 @@ class Args:
     robot_type: str = None  # only needed for quest agent or spacemouse agent
     hz: int = 100
     start_joints: List[float] = field(
-        # default_factory=lambda: np.deg2rad([0, -90, 90, -90, -90, 0, 0]).tolist()
-        default_factory=lambda: np.deg2rad([0, 0, 90, 0, 0, 0, 0]).tolist()
+        # default_factory=lambda: np.deg2rad([0, -90, 90, -90, -90, 0, 0]).tolist() # UR
+        # default_factory=lambda: np.deg2rad([0, 0, 90, 0, 90, 0, 0]).tolist() # Cobotta
+        default_factory=lambda: np.deg2rad(
+            [-90, -90, -90, -90, 90, 0, 0]
+        ).tolist()  # FR3
     )
 
     gello_port: Optional[str] = None

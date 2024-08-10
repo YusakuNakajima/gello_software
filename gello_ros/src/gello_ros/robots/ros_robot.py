@@ -32,31 +32,62 @@ class ROSRobot(Robot):
         # controller_name = "/scaled_pos_joint_traj_controller/command"
 
         # for cobotta
+        # self.max_vel = [
+        #     0.383012504350156,
+        #     0.37256670877697,
+        #     0.68942250783028,
+        #     0.602189591308619,
+        #     0.602189591308619,
+        #     1.05386470893922,
+        # ]
+        # self.joint_pos_limits = [
+        #     {"name": "joint_1", "lower": -2.617994, "upper": 2.617994},
+        #     {"name": "joint_2", "lower": -1.047198, "upper": 1.745329},
+        #     {"name": "joint_3", "lower": 0.3141593, "upper": 2.443461},
+        #     {"name": "joint_4", "lower": -2.96706, "upper": 2.96706},
+        #     {"name": "joint_5", "lower": -1.658063, "upper": 2.356194},
+        #     {"name": "joint_6", "lower": -2.96706, "upper": 2.96706},
+        # ]
+        # self.joint_names_order = [
+        #     "joint_1",
+        #     "joint_2",
+        #     "joint_3",
+        #     "joint_4",
+        #     "joint_5",
+        #     "joint_6",
+        # ]
+        # controller_name = "/cobotta/arm_controller/command"
+
+        # for FR3
         self.max_vel = [
-            0.383012504350156,
-            0.37256670877697,
-            0.68942250783028,
-            0.602189591308619,
-            0.602189591308619,
-            1.05386470893922,
+        1,#3.15,  # Updated value for j1
+        1,#3.15,  # Updated value for j2
+        1,#3.15,  # Updated value for j3
+        1,#3.2,   # Updated value for j4
+        1,#3.2,   # Updated value for j5
+        1,#3.2,   # Updated value for j6
         ]
+
         self.joint_pos_limits = [
-            {"name": "joint_1", "lower": -2.617994, "upper": 2.617994},
-            {"name": "joint_2", "lower": -1.047198, "upper": 1.745329},
-            {"name": "joint_3", "lower": 0.3141593, "upper": 2.443461},
-            {"name": "joint_4", "lower": -2.96706, "upper": 2.96706},
-            {"name": "joint_5", "lower": -1.658063, "upper": 2.356194},
-            {"name": "joint_6", "lower": -2.96706, "upper": 2.96706},
+            {"name": "j1", "lower": -3.0543, "upper": 3.0543},  # Updated limits for j1
+            {"name": "j2", "lower": -4.6251, "upper": 1.4835},  # Updated limits for j2
+            {"name": "j3", "lower": -2.8274, "upper": 2.8274},  # Updated limits for j3
+            {"name": "j4", "lower": -4.6251, "upper": 1.4835},  # Updated limits for j4
+            {"name": "j5", "lower": -3.0543, "upper": 3.0543},  # Updated limits for j5
+            {"name": "j6", "lower": -3.0543, "upper": 3.0543},  # Updated limits for j6
         ]
+
         self.joint_names_order = [
-            "joint_1",
-            "joint_2",
-            "joint_3",
-            "joint_4",
-            "joint_5",
-            "joint_6",
-        ]
-        controller_name = "/cobotta/arm_controller/command"
+            "j1",
+            "j2",
+            "j3",
+            "j4",
+            "j5",
+            "j6",
+        ]   
+
+        controller_name = "/frrobot/position_trajectory_controller/command"
+
 
         self.trajectory_publisher = rospy.Publisher(
             controller_name, JointTrajectory, queue_size=1
