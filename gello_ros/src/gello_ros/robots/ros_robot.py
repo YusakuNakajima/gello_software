@@ -14,83 +14,27 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 class ROSRobot(Robot):
     """A class representing a UR robot."""
 
-    def __init__(self, no_gripper: bool = True):
+    def __init__(
+        self,
+        no_gripper: bool = True,
+    ):
         if not no_gripper:
             print("supposed only no gripper")
             exit()
-        rospy.Subscriber("/joint_states", JointState, self.joint_state_callback)
 
-        # for UR
-        # self.joint_names_order = [
-        #     "shoulder_pan_joint",
-        #     "shoulder_lift_joint",
-        #     "elbow_joint",
-        #     "wrist_1_joint",
-        #     "wrist_2_joint",
-        #     "wrist_3_joint",
-        # ]
-        # controller_name = "/scaled_pos_joint_traj_controller/command"
-
-        # for cobotta
-        # self.max_vel = [
-        #     0.383012504350156,
-        #     0.37256670877697,
-        #     0.68942250783028,
-        #     0.602189591308619,
-        #     0.602189591308619,
-        #     1.05386470893922,
-        # ]
-        # self.joint_pos_limits = [
-        #     {"name": "joint_1", "lower": -2.617994, "upper": 2.617994},
-        #     {"name": "joint_2", "lower": -1.047198, "upper": 1.745329},
-        #     {"name": "joint_3", "lower": 0.3141593, "upper": 2.443461},
-        #     {"name": "joint_4", "lower": -2.96706, "upper": 2.96706},
-        #     {"name": "joint_5", "lower": -1.658063, "upper": 2.356194},
-        #     {"name": "joint_6", "lower": -2.96706, "upper": 2.96706},
-        # ]
-        # self.joint_names_order = [
-        #     "joint_1",
-        #     "joint_2",
-        #     "joint_3",
-        #     "joint_4",
-        #     "joint_5",
-        #     "joint_6",
-        # ]
-        # controller_name = "/cobotta/arm_controller/command"
-
-        # for FR3
-        self.max_vel = [
-        1,#3.15,  # Updated value for j1
-        1,#3.15,  # Updated value for j2
-        1,#3.15,  # Updated value for j3
-        1,#3.2,   # Updated value for j4
-        1,#3.2,   # Updated value for j5
-        1,#3.2,   # Updated value for j6
-        ]
-
-        self.joint_pos_limits = [
-            {"name": "j1", "lower": -3.0543, "upper": 3.0543},  # Updated limits for j1
-            {"name": "j2", "lower": -4.6251, "upper": 1.4835},  # Updated limits for j2
-            {"name": "j3", "lower": -2.8274, "upper": 2.8274},  # Updated limits for j3
-            {"name": "j4", "lower": -4.6251, "upper": 1.4835},  # Updated limits for j4
-            {"name": "j5", "lower": -3.0543, "upper": 3.0543},  # Updated limits for j5
-            {"name": "j6", "lower": -3.0543, "upper": 3.0543},  # Updated limits for j6
-        ]
-
-        self.joint_names_order = [
-            "j1",
-            "j2",
-            "j3",
-            "j4",
-            "j5",
-            "j6",
-        ]   
-
-        controller_name = "/frrobot/position_trajectory_controller/command"
-
-
+        self.joint_names_order = rospy.get_param("~joint_names_order")
+        self.joint_max_vel = rospy.get_param("~joint_max_vel")
+        self.joint_pos_limits_upper = rospy.get_param("~joint_pos_limits_upper")
+        self.joint_pos_limits_lower = rospy.get_param("~joint_pos_limits_lower")
         self.trajectory_publisher = rospy.Publisher(
-            controller_name, JointTrajectory, queue_size=1
+            rospy.get_param("~JTC_controller_command_topic"),
+            JointTrajectory,
+            queue_size=1,
+        )
+        rospy.Subscriber(
+            rospy.get_param("~joint_states_topic"),
+            JointState,
+            self.joint_states_callback,
         )
 
         control_freq = 100
@@ -98,7 +42,7 @@ class ROSRobot(Robot):
         self._speed_scale = 1
         self._use_gripper = not no_gripper
 
-    def joint_state_callback(self, msg: JointState):
+    def joint_states_callback(self, msg: JointState):
         self.ros_joint_state = msg
 
     def num_dofs(self) -> int:
@@ -142,16 +86,8 @@ class ROSRobot(Robot):
         current_robot_joints = self.get_joint_state()
         for i, name in enumerate(trajectory_msg.joint_names):
             pos = joint_state[i]
-            pos_lower = next(
-                joint["lower"]
-                for joint in self.joint_pos_limits
-                if joint["name"] == name
-            )
-            pos_upper = next(
-                joint["upper"]
-                for joint in self.joint_pos_limits
-                if joint["name"] == name
-            )
+            pos_lower = self.joint_pos_limits_lower[i]
+            pos_upper = self.joint_pos_limits_upper[i]
             if pos < pos_lower:
                 pos = pos_lower
             elif pos > pos_upper:
@@ -160,7 +96,8 @@ class ROSRobot(Robot):
 
             dur.append(
                 max(
-                    abs(joint_state[i] - current_robot_joints[i]) / self.max_vel[i],
+                    abs(joint_state[i] - current_robot_joints[i])
+                    / self.joint_max_vel[i],
                     self._min_traj_dur,
                 )
             )

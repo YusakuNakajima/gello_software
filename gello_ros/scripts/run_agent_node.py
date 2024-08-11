@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Optional, Tuple, List
 
 import numpy as np
-import tyro
 
 from gello_ros.agents.agent import BimanualAgent, DummyAgent
 from gello_ros.agents.gello_agent import GelloAgent
@@ -27,8 +26,9 @@ def print_color(*args, color=None, attrs=(), **kwargs):
     print(*args, **kwargs)
 
 
-@dataclass
-class Args:
+def main():
+    rospy.init_node("gello_agent_node", anonymous=True)
+
     agent: str = "gello"
     robot_port: int = 6001
     wrist_camera_port: int = 5000
@@ -36,13 +36,9 @@ class Args:
     hostname: str = "127.0.0.1"
     robot_type: str = None  # only needed for quest agent or spacemouse agent
     hz: int = 100
-    start_joints: List[float] = field(
-        # default_factory=lambda: np.deg2rad([0, -90, 90, -90, -90, 0, 0]).tolist() # UR
-        # default_factory=lambda: np.deg2rad([0, 0, 90, 0, 90, 0, 0]).tolist() # Cobotta
-        default_factory=lambda: np.deg2rad(
-            [-90, -90, -90, -90, 90, 0, 0]
-        ).tolist()  # FR3
-    )
+    start_joints: List[float] = rospy.get_param("~gello_start_joints")
+
+    print(f"start_joints: {start_joints}")
 
     gello_port: Optional[str] = None
     mock: bool = False
@@ -51,24 +47,21 @@ class Args:
     verbose: bool = False
     no_gripper: bool = True
 
-
-def main(args):
-    rospy.init_node("gello_env", anonymous=True)
-    if args.mock:
+    if mock:
         robot_client = PrintRobot(8, dont_print=True)
         camera_clients = {}
     else:
         camera_clients = {
             # you can optionally add camera nodes here for imitation learning purposes
-            # "wrist": ZMQClientCamera(port=args.wrist_camera_port, host=args.hostname),
-            # "base": ZMQClientCamera(port=args.base_camera_port, host=args.hostname),
+            # "wrist": ZMQClientCamera(port=wrist_camera_port, host=hostname),
+            # "base": ZMQClientCamera(port=base_camera_port, host=hostname),
         }
-        robot_client = ZMQClientRobot(port=args.robot_port, host=args.hostname)
-    env = RobotEnv(robot_client, control_rate_hz=args.hz, camera_dict=camera_clients)
+        robot_client = ZMQClientRobot(port=robot_port, host=hostname)
+    env = RobotEnv(robot_client, control_rate_hz=hz, camera_dict=camera_clients)
 
-    if args.agent == "gello":
+    if agent == "gello":
         print("Using Gello agent")
-        gello_port = args.gello_port
+        gello_port = gello_port
         if gello_port is None:
             usb_ports = glob.glob("/dev/serial/by-id/*")
             print(f"Found {len(usb_ports)} ports")
@@ -80,7 +73,7 @@ def main(args):
                     "No gello port found, please specify one or plug in gello"
                 )
 
-        gello_reset_joints = np.array(args.start_joints)
+        gello_reset_joints = np.array(start_joints)
         agent = GelloAgent(port=gello_port, start_joints=gello_reset_joints)
         gello_curr_joints = np.array(env.get_obs()["joint_positions"])
 
@@ -91,17 +84,17 @@ def main(args):
                 env.step(jnt)
                 time.sleep(0.001)
 
-    elif args.agent == "quest":
+    elif agent == "quest":
         from gello_ros.agents.quest_agent import SingleArmQuestAgent
 
-        agent = SingleArmQuestAgent(robot_type=args.robot_type, which_hand="l")
-    elif args.agent == "spacemouse":
+        agent = SingleArmQuestAgent(robot_type=robot_type, which_hand="l")
+    elif agent == "spacemouse":
         from gello_ros.agents.spacemouse_agent import SpacemouseAgent
 
-        agent = SpacemouseAgent(robot_type=args.robot_type, verbose=args.verbose)
-    elif args.agent == "dummy" or args.agent == "none":
+        agent = SpacemouseAgent(robot_type=robot_type, verbose=verbose)
+    elif agent == "dummy" or agent == "none":
         agent = DummyAgent(num_dofs=robot_client.num_dofs())
-    elif args.agent == "policy":
+    elif agent == "policy":
         raise NotImplementedError("add your imitation policy here if there is one")
     else:
         raise ValueError("Invalid agent name")
@@ -109,7 +102,7 @@ def main(args):
     # going to start position
     print("Going to start position")
     agent_start_pos = agent.act(env.get_obs())
-    if args.no_gripper:
+    if no_gripper:
         agent_start_pos = agent_start_pos[0:-1]
     obs = env.get_obs()
     robot_joints = obs["joint_positions"]
@@ -145,7 +138,7 @@ def main(args):
         obs = env.get_obs()
         command_joints = agent.act(obs)
         current_joints = obs["joint_positions"]
-        if args.no_gripper:
+        if no_gripper:
             command_joints = command_joints[0:-1]
         delta = command_joints - current_joints
         max_joint_delta = np.abs(delta).max()
@@ -157,7 +150,7 @@ def main(args):
     obs = env.get_obs()
     joints = obs["joint_positions"]
     action = agent.act(obs)
-    if args.no_gripper:
+    if no_gripper:
         action = action[0:-1]
     if (action - joints > 0.5).any():
         print("Action is too big")
@@ -172,7 +165,7 @@ def main(args):
             )
         exit()
 
-    if args.use_save_interface:
+    if use_save_interface:
         from gello_ros.data_utils.keyboard_interface import KBReset
 
         kb_interface = KBReset()
@@ -192,16 +185,16 @@ def main(args):
             flush=True,
         )
         action = agent.act(obs)
-        if args.no_gripper:
+        if no_gripper:
             action = action[0:-1]
         dt = datetime.datetime.now()
-        if args.use_save_interface:
+        if use_save_interface:
             state = kb_interface.update()
             if state == "start":
                 dt_time = datetime.datetime.now()
                 save_path = (
-                    Path(args.data_dir).expanduser()
-                    / args.agent
+                    Path(data_dir).expanduser()
+                    / agent
                     / dt_time.strftime("%m%d_%H%M%S")
                 )
                 save_path.mkdir(parents=True, exist_ok=True)
@@ -217,4 +210,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main(tyro.cli(Args))
+    main()
