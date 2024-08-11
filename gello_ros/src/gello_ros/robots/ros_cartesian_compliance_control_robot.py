@@ -45,6 +45,8 @@ class CartesianComplianceControlRobot(Robot):
             self.joint_states_callback,
         )
         self.kinematics = ur_kinematics()
+        self.ee_link = rospy.get_param("~ee_link")
+
         control_freq = 100
         self._min_traj_dur = 5.0 / control_freq
         self._speed_scale = 1
@@ -87,10 +89,20 @@ class CartesianComplianceControlRobot(Robot):
         Args:
             joint_state (np.ndarray): The state to command the leader robot to.
         """
-        print("Computed FK pose: ", self.kinematics.forward(joint_state))
 
-        # Optionally publish the pose if needed
-        # self.cartesian_command_publisher.publish(pose_stamped)
+        pose = self.kinematics.forward(joint_state, tip_link=self.ee_link)
+        pose_stamped = PoseStamped()
+        pose_stamped.header.stamp = rospy.Time.now()
+        pose_stamped.header.frame_id = "base_link"
+        pose_stamped.pose.position.x = pose[0]
+        pose_stamped.pose.position.y = pose[1]
+        pose_stamped.pose.position.z = pose[2]
+        pose_stamped.pose.orientation.x = pose[3]
+        pose_stamped.pose.orientation.y = pose[4]
+        pose_stamped.pose.orientation.z = pose[5]
+        pose_stamped.pose.orientation.w = pose[6]
+
+        self.cartesian_command_publisher.publish(pose_stamped)
 
     def get_observations(self) -> Dict[str, np.ndarray]:
         joints = self.get_joint_state()

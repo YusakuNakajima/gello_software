@@ -34,6 +34,7 @@ joint_pos_limits_upper:
 move_group_name: "manipulator"
 JTC_command_topic: "/scaled_pos_joint_traj_controller/command"
 cartesian_compliance_controller_command_topic: "/target_frame"
+ee_link: "pestle_tip"
 joint_states_topic: "/joint_states"
 
 gello_start_joints:
