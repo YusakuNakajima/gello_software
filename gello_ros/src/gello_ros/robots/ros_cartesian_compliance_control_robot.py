@@ -5,13 +5,16 @@ import numpy as np
 from gello_ros.robots.robot import Robot
 
 import rospy
+from moveit_commander import MoveGroupCommander
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Float64
+from geometry_msgs.msg import PoseStamped
 
+
+from ur_pykdl import ur_kinematics
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
-class ROSRobot(Robot):
+class CartesianComplianceControlRobot(Robot):
     """A class representing a UR robot."""
 
     def __init__(
@@ -27,8 +30,13 @@ class ROSRobot(Robot):
         self.joint_pos_limits_upper = rospy.get_param("~joint_pos_limits_upper")
         self.joint_pos_limits_lower = rospy.get_param("~joint_pos_limits_lower")
         self.trajectory_publisher = rospy.Publisher(
-            rospy.get_param("~JTC_controller_command_topic"),
+            rospy.get_param("~JTC_command_topic"),
             JointTrajectory,
+            queue_size=1,
+        )
+        self.cartesian_command_publisher = rospy.Publisher(
+            rospy.get_param("~cartesian_compliance_controller_command_topic"),
+            PoseStamped,
             queue_size=1,
         )
         rospy.Subscriber(
@@ -36,7 +44,7 @@ class ROSRobot(Robot):
             JointState,
             self.joint_states_callback,
         )
-
+        self.kinematics = ur_kinematics()
         control_freq = 100
         self._min_traj_dur = 5.0 / control_freq
         self._speed_scale = 1
@@ -79,33 +87,10 @@ class ROSRobot(Robot):
         Args:
             joint_state (np.ndarray): The state to command the leader robot to.
         """
-        trajectory_msg = JointTrajectory()
-        trajectory_msg.joint_names = self.joint_names_order
-        point = JointTrajectoryPoint()
-        dur = []
-        current_robot_joints = self.get_joint_state()
-        for i, name in enumerate(trajectory_msg.joint_names):
-            pos = joint_state[i]
-            pos_lower = self.joint_pos_limits_lower[i]
-            pos_upper = self.joint_pos_limits_upper[i]
-            if pos < pos_lower:
-                pos = pos_lower
-            elif pos > pos_upper:
-                pos = pos_upper
-            point.positions.append(pos)
+        print("Computed FK pose: ", self.kinematics.forward(joint_state))
 
-            dur.append(
-                max(
-                    abs(joint_state[i] - current_robot_joints[i])
-                    / self.joint_max_vel[i],
-                    self._min_traj_dur,
-                )
-            )
-
-        # set the target convergence time of the JTC to match the joint that tasks the longest time to move
-        point.time_from_start = rospy.Duration(max(dur) / self._speed_scale)
-        trajectory_msg.points.append(point)
-        self.trajectory_publisher.publish(trajectory_msg)
+        # Optionally publish the pose if needed
+        # self.cartesian_command_publisher.publish(pose_stamped)
 
     def get_observations(self) -> Dict[str, np.ndarray]:
         joints = self.get_joint_state()
@@ -121,7 +106,7 @@ class ROSRobot(Robot):
 
 def main():
     rospy.init_node("ros_robot")
-    ros_robot = ROSRobot(no_gripper=True)
+    ros_robot = CartesianComplianceControlRobot(no_gripper=True)
 
 
 if __name__ == "__main__":

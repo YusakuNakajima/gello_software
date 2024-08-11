@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import signal
+import sys
 import datetime
 import glob
 import time
@@ -16,6 +18,12 @@ from gello_ros.robots.robot import PrintRobot
 from gello_ros.zmq_core.robot_node import ZMQClientRobot
 
 import rospy
+
+
+def signal_handler(sig, frame):
+    print("Exiting...")
+    rospy.signal_shutdown("Ctrl+C pressed")
+    sys.exit(0)
 
 
 def print_color(*args, color=None, attrs=(), **kwargs):
@@ -210,4 +218,5 @@ def main():
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
     main()

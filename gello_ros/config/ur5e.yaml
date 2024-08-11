@@ -31,7 +31,9 @@ joint_pos_limits_upper:
   - !degrees  360.0  # Upper limit for wrist_2_joint
   - !degrees  360.0  # Upper limit for wrist_3_joint
 
-JTC_controller_command_topic: "/scaled_pos_joint_traj_controller/command"
+move_group_name: "manipulator"
+JTC_command_topic: "/scaled_pos_joint_traj_controller/command"
+cartesian_compliance_controller_command_topic: "/target_frame"
 joint_states_topic: "/joint_states"
 
 gello_start_joints:
