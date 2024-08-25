@@ -30,7 +30,7 @@ joint_pos_limits_upper:
   - 3.0543  # Upper limit for j5
   - 3.0543  # Upper limit for j6
 
-JTC_controller_command_topic: "/frrobot/position_trajectory_controller/command"
+joint_trajectory_controller_command_topic: "/frrobot/position_trajectory_controller/command"
 joint_states_topic: "/joint_states"
 
 gello_start_joints:

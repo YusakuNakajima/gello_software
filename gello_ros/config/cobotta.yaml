@@ -30,7 +30,7 @@ joint_pos_limits_upper:
   - 2.356194  # Upper limit for j5
   - 2.96706  # Upper limit for j6
 
-JTC_controller_command_topic: "/cobotta/arm_controller/command"
+joint_trajectory_controller_command_topic: "/cobotta/arm_controller/command"
 joint_states_topic: "/joint_states"
 
 gello_start_joints:
