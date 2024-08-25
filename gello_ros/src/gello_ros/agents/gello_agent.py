@@ -173,10 +173,14 @@ class GelloAgent(Agent):
             config = PORT_CONFIG_MAP[port]
             self._robot = config.make_robot(port=port, start_joints=start_joints)
         self._mode = mode
-        # if self._mode == "bilateral_position":
-        #     self._robot.set_torque_mode(True)
-        # else:
-        #     self._robot.set_torque_mode(False)
+
+        # Set control mode
+        self._robot.set_control_mode("POSITION_MODE")  # CURRENT_BASED_POSITION_MODE
+        # Set torque
+        if self._mode == "bilateral_position":
+            self._robot.set_torque_mode(True)
+        else:
+            self._robot.set_torque_mode(False)
 
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
         dynamixel_joints = self._robot.get_joint_state()

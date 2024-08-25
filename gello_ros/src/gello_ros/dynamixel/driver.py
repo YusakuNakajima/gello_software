@@ -26,6 +26,14 @@ LEN_PRESENT_POSITION = 4
 TORQUE_ENABLE = 1
 TORQUE_DISABLE = 0
 
+CONTROL_MODES = {
+    "CURRENT_MODE": 0,
+    "VELOCITY_MODE": 1,
+    "PWM_MODE": 2,
+    "POSITION_MODE": 3,
+    "CURRENT_BASED_POSITION_MODE": 5,
+}
+
 
 class DynamixelDriverProtocol(Protocol):
     def set_joints(self, joint_angles: Sequence[float]):
@@ -175,8 +183,22 @@ class DynamixelDriver(DynamixelDriverProtocol):
                     raise RuntimeError(
                         f"Failed to set torque mode for Dynamixel with ID {dxl_id}"
                     )
-
         self._torque_enabled = enable
+
+    def set_control_mode(self, mode_name: str):
+        mode = CONTROL_MODES[mode_name]
+        with self._lock:
+            for dxl_id in self._ids:
+                dxl_comm_result, dxl_error = self._packetHandler.write1ByteTxRx(
+                    self._portHandler, dxl_id, ADDR_OPERATING_MODE, mode
+                )
+                if dxl_comm_result != COMM_SUCCESS or dxl_error != 0:
+                    print(dxl_comm_result)
+                    print(dxl_error)
+                    raise RuntimeError(
+                        f"Failed to set control mode for Dynamixel with ID {dxl_id}"
+                    )
+        self._control_mode = mode
 
     def _start_read_and_write_thread(self):
         self._read_and_write_thread = Thread(target=self._read_and_write_joint_angles)
