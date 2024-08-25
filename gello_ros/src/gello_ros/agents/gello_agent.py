@@ -6,6 +6,7 @@ import numpy as np
 
 from gello_ros.agents.agent import Agent
 from gello_ros.robots.dynamixel import DynamixelRobot
+import time
 
 
 @dataclass
@@ -40,6 +41,7 @@ class DynamixelRobotConfig:
             port=port,
             gripper_config=self.gripper_config,
             start_joints=start_joints,
+            baudrate=2000000,  # 2M bps
         )
 
 
@@ -171,10 +173,10 @@ class GelloAgent(Agent):
             config = PORT_CONFIG_MAP[port]
             self._robot = config.make_robot(port=port, start_joints=start_joints)
         self._mode = mode
-        if self._mode == "bilateral_position":
-            self._robot.set_torque_mode(True)
-        else:
-            self._robot.set_torque_mode(False)
+        # if self._mode == "bilateral_position":
+        #     self._robot.set_torque_mode(True)
+        # else:
+        #     self._robot.set_torque_mode(False)
 
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
         dynamixel_joints = self._robot.get_joint_state()

@@ -24,3 +24,6 @@ gripper open (degrees)        113.091015625
 gripper close (degrees)       71.291015625
 ```
 
+## boudrate
+4M -> too fast, unstable communication
+2M -> stable communication

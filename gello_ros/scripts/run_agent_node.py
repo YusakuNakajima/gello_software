@@ -149,7 +149,8 @@ def main():
 
     # soft startup
     max_delta = 0.003
-    for _ in range(100):
+    startup_iterations = 100
+    for i in range(startup_iterations):
         obs = env.get_obs()
         command_joints = agent.act(obs)
         current_joints = obs["joint_positions"]
@@ -158,6 +159,7 @@ def main():
         if max_joint_delta > max_delta:
             delta = delta / max_joint_delta * max_delta
         env.step(current_joints + delta)
+        # print("start up iteration", i, "/", startup_iterations)
 
     # check if the joints are close
     obs = env.get_obs()

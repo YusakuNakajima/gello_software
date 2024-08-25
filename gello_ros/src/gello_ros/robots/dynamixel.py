@@ -18,6 +18,7 @@ class DynamixelRobot(Robot):
         baudrate: int = 57600,
         gripper_config: Optional[Tuple[int, float, float]] = None,
         start_joints: Optional[np.ndarray] = None,
+        start_torque_on: bool = False,
     ):
         from gello_ros.dynamixel.driver import (
             DynamixelDriver,
@@ -100,6 +101,9 @@ class DynamixelRobot(Robot):
             if gripper_config is not None:
                 new_joint_offsets.append(self._joint_offsets[-1])
             self._joint_offsets = np.array(new_joint_offsets)
+            self.command_joint_state(start_joints)
+            # if start_torque_on:
+            #     self.set_torque_mode(True)
 
     def num_dofs(self) -> int:
         return len(self._joint_ids)
