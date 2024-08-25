@@ -115,7 +115,7 @@ PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
             0 * np.pi / 2,
         ),
         joint_signs=(1, 1, -1, 1, 1, 1),
-        gripper_config=(7, 113.091015625, 71.291015625),
+        gripper_config=None,  # (7, 113.091015625, 71.291015625),
     ),
     # Onolab Cobotta
     # "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0": DynamixelRobotConfig(
@@ -158,6 +158,7 @@ class GelloAgent(Agent):
         port: str,
         dynamixel_config: Optional[DynamixelRobotConfig] = None,
         start_joints: Optional[np.ndarray] = None,
+        mode: Optional[str] = "unilateral_position",
     ):
         if dynamixel_config is not None:
             self._robot = dynamixel_config.make_robot(
@@ -169,13 +170,21 @@ class GelloAgent(Agent):
 
             config = PORT_CONFIG_MAP[port]
             self._robot = config.make_robot(port=port, start_joints=start_joints)
+        self._mode = mode
+        if self._mode == "bilateral_position":
+            self._robot.set_torque_mode(True)
+        else:
+            self._robot.set_torque_mode(False)
 
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
-        dyna_joints = self._robot.get_joint_state()
-        # dyna_joints[4] += np.pi / 4 # for DENSO robot
-        return dyna_joints
-        # current_q = dyna_joints[:-1]  # last one dim is the gripper
-        current_gripper = dyna_joints[-1]  # last one dim is the gripper
+        dynamixel_joints = self._robot.get_joint_state()
+        if self._mode == "bilateral_position":
+            self._robot.command_joint_state(obs["joint_positions"])
+
+        # dynamixel_joints[4] += np.pi / 4 # for DENSO robot
+        return dynamixel_joints
+        # current_q = dynamixel_joints[:-1]  # last one dim is the gripper
+        current_gripper = dynamixel_joints[-1]  # last one dim is the gripper
 
         print(current_gripper)
         if current_gripper < 0.2:
@@ -183,4 +192,7 @@ class GelloAgent(Agent):
             return obs["joint_positions"]
         else:
             self._robot.set_torque_mode(False)
-            return dyna_joints
+            return dynamixel_joints
+
+    def set_torque_mode(self, torque_mode: bool):
+        self._robot.set_torque_mode(torque_mode)

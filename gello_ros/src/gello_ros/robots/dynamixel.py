@@ -126,7 +126,9 @@ class DynamixelRobot(Robot):
         return pos
 
     def command_joint_state(self, joint_state: np.ndarray) -> None:
-        self._driver.set_joints((joint_state + self._joint_offsets).tolist())
+        self._driver.set_joints(
+            list((joint_state + self._joint_offsets) * self._joint_signs)
+        )
 
     def set_torque_mode(self, mode: bool):
         if mode == self._torque_on:

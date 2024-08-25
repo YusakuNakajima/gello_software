@@ -40,4 +40,3 @@ gello_start_joints:
   - !degrees -90.0  # j4
   - !degrees 90.0  # j5
   - 0.0  # j6
-  - 0.0  # gripper_finger_joint

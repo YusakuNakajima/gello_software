@@ -20,8 +20,13 @@ from gello_ros.zmq_core.robot_node import ZMQClientRobot
 import rospy
 
 
+agent = None
+
+
 def signal_handler(sig, frame):
     print("Exiting...")
+    if agent is not None:
+        agent.set_torque_mode(False)
     rospy.signal_shutdown("Ctrl+C pressed")
     sys.exit(0)
 
@@ -45,6 +50,7 @@ def main():
     robot_type: str = None  # only needed for quest agent or spacemouse agent
     hz: int = 100
     start_joints: List[float] = rospy.get_param("~gello_start_joints")
+    gello_mode: str = rospy.get_param("~gello_mode")
 
     print(f"start_joints: {start_joints}")
 
@@ -82,7 +88,9 @@ def main():
                 )
 
         gello_reset_joints = np.array(start_joints)
-        agent = GelloAgent(port=gello_port, start_joints=gello_reset_joints)
+        agent = GelloAgent(
+            port=gello_port, start_joints=gello_reset_joints, mode=gello_mode
+        )
         gello_curr_joints = np.array(env.get_obs()["joint_positions"])
 
         if gello_reset_joints.shape == gello_curr_joints.shape:
@@ -110,8 +118,7 @@ def main():
     # going to start position
     print("Going to start position")
     agent_start_pos = agent.act(env.get_obs())
-    if no_gripper:
-        agent_start_pos = agent_start_pos[0:-1]
+    print(f"Agent start pos: {agent_start_pos}")
     obs = env.get_obs()
     robot_joints = obs["joint_positions"]
 
@@ -146,8 +153,6 @@ def main():
         obs = env.get_obs()
         command_joints = agent.act(obs)
         current_joints = obs["joint_positions"]
-        if no_gripper:
-            command_joints = command_joints[0:-1]
         delta = command_joints - current_joints
         max_joint_delta = np.abs(delta).max()
         if max_joint_delta > max_delta:
@@ -158,8 +163,6 @@ def main():
     obs = env.get_obs()
     joints = obs["joint_positions"]
     action = agent.act(obs)
-    if no_gripper:
-        action = action[0:-1]
     if (action - joints > 0.5).any():
         print("Action is too big")
         print("action", action)
@@ -193,8 +196,6 @@ def main():
             flush=True,
         )
         action = agent.act(obs)
-        if no_gripper:
-            action = action[0:-1]
         dt = datetime.datetime.now()
         if use_save_interface:
             state = kb_interface.update()

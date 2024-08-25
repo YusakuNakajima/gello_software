@@ -36,6 +36,7 @@ joint_trajectory_controller_command_topic: "/scaled_pos_joint_traj_controller/co
 cartesian_compliance_controller_command_topic: "/target_frame"
 ee_link: "pestle_tip"
 joint_states_topic: "/joint_states"
+gello_mode: "bilateral_position" # "unilateral_position" or "bilateral_position"
 
 gello_start_joints:
   - !degrees  -180.0  # shoulder_pan_joint
@@ -44,4 +45,3 @@ gello_start_joints:
   - !degrees  -90.0  # wrist_1_joint
   - !degrees  90.0  # wrist_2_joint
   - !degrees  0.0  # wrist_3_joint
-  - !degrees  0.0  # gripper_finger_joint
