@@ -18,7 +18,7 @@ def signal_handler(sig, frame):
 
 def main():
     rospy.init_node("gello_robot_node", anonymous=True)
-    robot_type: str = "joint_position_control"
+    robot_type: str = "cartesian_compliance_control"
     robot_port: int = 6001
     hostname: str = "127.0.0.1"
 

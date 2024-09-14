@@ -30,7 +30,7 @@ class CartesianComplianceControlRobot(Robot):
         self.joint_pos_limits_upper = rospy.get_param("~joint_pos_limits_upper")
         self.joint_pos_limits_lower = rospy.get_param("~joint_pos_limits_lower")
         self.trajectory_publisher = rospy.Publisher(
-            rospy.get_param("~JTC_command_topic"),
+            rospy.get_param("~joint_trajectory_controller_command_topic"),
             JointTrajectory,
             queue_size=1,
         )
