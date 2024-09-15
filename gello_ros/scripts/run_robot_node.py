@@ -8,6 +8,7 @@ from gello_ros.robots.robot import BimanualRobot, PrintRobot
 from gello_ros.zmq_core.robot_node import ZMQServerRobot
 
 import rospy
+import time
 
 
 def signal_handler(sig, frame):

@@ -69,10 +69,9 @@ class DynamixelRobot(Robot):
         assert np.all(
             np.abs(self._joint_signs) == 1
         ), f"joint_signs: {self._joint_signs}"
-
         if real:
             self._driver = DynamixelDriver(joint_ids, port=port, baudrate=baudrate)
-            self._driver.set_torque_mode(False)
+            # self._driver.set_torque_mode(False)
         else:
             self._driver = FakeDynamixelDriver(joint_ids)
         self._torque_on = False
@@ -101,9 +100,13 @@ class DynamixelRobot(Robot):
             if gripper_config is not None:
                 new_joint_offsets.append(self._joint_offsets[-1])
             self._joint_offsets = np.array(new_joint_offsets)
-            self.command_joint_state(start_joints)
+
+            # self.command_joint_state(start_joints)
             # if start_torque_on:
             #     self.set_torque_mode(True)
+
+    # def start_communication_thread(self):
+    #     self._driver.start_communication_thread()
 
     def num_dofs(self) -> int:
         return len(self._joint_ids)

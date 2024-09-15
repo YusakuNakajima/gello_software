@@ -1,5 +1,5 @@
 from typing import Dict
-
+import time
 import numpy as np
 
 from gello_ros.robots.robot import Robot
@@ -44,6 +44,8 @@ class CartesianComplianceControlRobot(Robot):
             JointState,
             self.joint_states_callback,
         )
+        # wait for subscriber to get the first message
+        time.sleep(0.1)
         self.kinematics = ur_kinematics()
         self.ee_link = rospy.get_param("~ee_link")
 

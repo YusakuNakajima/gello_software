@@ -126,12 +126,12 @@ class DynamixelDriver(DynamixelDriverProtocol):
             ADDR_PRESENT_POSITION,
             LEN_PRESENT_POSITION,
         )
-        self._groupSyncRead_debug = GroupSyncRead(
-            self._portHandler,
-            self._packetHandler,
-            ADDR_GOAL_POSITION,
-            LEN_GOAL_POSITION,
-        )
+        # self._groupSyncRead_debug = GroupSyncRead(
+        #     self._portHandler,
+        #     self._packetHandler,
+        #     ADDR_GOAL_POSITION,
+        #     LEN_GOAL_POSITION,
+        # )
         self._groupSyncWrite = GroupSyncWrite(
             self._portHandler,
             self._packetHandler,
@@ -152,10 +152,10 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 raise RuntimeError(
                     f"Failed to add parameter for Dynamixel with ID {dxl_id}"
                 )
-            if not self._groupSyncRead_debug.addParam(dxl_id):
-                raise RuntimeError(
-                    f"Failed to add parameter for Dynamixel with ID {dxl_id}"
-                )
+            # if not self._groupSyncRead_debug.addParam(dxl_id):
+            #     raise RuntimeError(
+            #         f"Failed to add parameter for Dynamixel with ID {dxl_id}"
+            #     )
 
         # Disable torque for each Dynamixel servo
         self._torque_enabled = False
@@ -163,7 +163,6 @@ class DynamixelDriver(DynamixelDriverProtocol):
             self.set_torque_mode(self._torque_enabled)
         except Exception as e:
             print(f"port: {port}, {e}")
-
         self._stop_thread = Event()
         self._start_read_and_write_thread()
 
@@ -211,44 +210,44 @@ class DynamixelDriver(DynamixelDriverProtocol):
             # time.sleep(0.001)
             with self._lock:
                 ######### Write the goal position for each Dynamixel servo
-                if len(self._joint_angles_command) != len(self._ids):
-                    raise ValueError(
-                        "The length of joint_angles must match the number of servos"
-                    )
-                # if not self._torque_enabled:
-                #     raise RuntimeError("Torque must be enabled to set joint angles")
-                if all(angle == 0 for angle in self._joint_angles_command):
-                    pass
-                else:
-                    # print("self._joint_angles_command", self._joint_angles_command)
-                    for dxl_id, angle in zip(self._ids, self._joint_angles_command):
-                        # Convert the angle to the appropriate value for the servo
-                        position_value = int(angle * 2048 / np.pi)
+                # if len(self._joint_angles_command) != len(self._ids):
+                #     raise ValueError(
+                #         "The length of joint_angles must match the number of servos"
+                #     )
+                # # if not self._torque_enabled:
+                # #     raise RuntimeError("Torque must be enabled to set joint angles")
+                # if all(angle == 0 for angle in self._joint_angles_command):
+                #     pass
+                # else:
+                #     # print("self._joint_angles_command", self._joint_angles_command)
+                #     for dxl_id, angle in zip(self._ids, self._joint_angles_command):
+                #         # Convert the angle to the appropriate value for the servo
+                #         position_value = int(angle * 2048 / np.pi)
 
-                        # Allocate goal position value into byte array
-                        param_goal_position = [
-                            DXL_LOBYTE(DXL_LOWORD(position_value)),
-                            DXL_HIBYTE(DXL_LOWORD(position_value)),
-                            DXL_LOBYTE(DXL_HIWORD(position_value)),
-                            DXL_HIBYTE(DXL_HIWORD(position_value)),
-                        ]
+                #         # Allocate goal position value into byte array
+                #         param_goal_position = [
+                #             DXL_LOBYTE(DXL_LOWORD(position_value)),
+                #             DXL_HIBYTE(DXL_LOWORD(position_value)),
+                #             DXL_LOBYTE(DXL_HIWORD(position_value)),
+                #             DXL_HIBYTE(DXL_HIWORD(position_value)),
+                #         ]
 
-                        # Add goal position value to the Syncwrite parameter storage
-                        dxl_addparam_result = self._groupSyncWrite.addParam(
-                            dxl_id, param_goal_position
-                        )
-                        if not dxl_addparam_result:
-                            raise RuntimeError(
-                                f"Failed to set joint angle for Dynamixel with ID {dxl_id}"
-                            )
+                #         # Add goal position value to the Syncwrite parameter storage
+                #         dxl_addparam_result = self._groupSyncWrite.addParam(
+                #             dxl_id, param_goal_position
+                #         )
+                #         if not dxl_addparam_result:
+                #             raise RuntimeError(
+                #                 f"Failed to set joint angle for Dynamixel with ID {dxl_id}"
+                #             )
 
-                    # Syncwrite goal position
-                    dxl_comm_result = self._groupSyncWrite.txPacket()
-                    if dxl_comm_result != COMM_SUCCESS:
-                        raise RuntimeError("Failed to syncwrite goal position")
+                #     # Syncwrite goal position
+                #     dxl_comm_result = self._groupSyncWrite.txPacket()
+                #     if dxl_comm_result != COMM_SUCCESS:
+                #         raise RuntimeError("Failed to syncwrite goal position")
 
-                    # Clear syncwrite parameter storage
-                    self._groupSyncWrite.clearParam()
+                #     # Clear syncwrite parameter storage
+                #     self._groupSyncWrite.clearParam()
 
                 ######### Read the joint angles for each Dynamixel servo
                 _joint_angles_read = np.zeros(len(self._ids), dtype=int)
@@ -257,10 +256,10 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 if dxl_comm_result != COMM_SUCCESS:
                     print(f"warning, comm failed: {dxl_comm_result}")
                     continue
-                dxl_comm_result = self._groupSyncRead_debug.txRxPacket()
-                if dxl_comm_result != COMM_SUCCESS:
-                    print(f"warning, debug comm failed: {dxl_comm_result}")
-                    continue
+                # dxl_comm_result = self._groupSyncRead_debug.txRxPacket()
+                # if dxl_comm_result != COMM_SUCCESS:
+                #     print(f"warning, debug comm failed: {dxl_comm_result}")
+                #     continue
                 for i, dxl_id in enumerate(self._ids):
                     if self._groupSyncRead.isAvailable(
                         dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
@@ -274,6 +273,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                         raise RuntimeError(
                             f"Failed to get joint angles for Dynamixel with ID {dxl_id}"
                         )
+
                     # debug
                     # if self._groupSyncRead_debug.isAvailable(
                     #     dxl_id, ADDR_GOAL_POSITION, LEN_GOAL_POSITION
