@@ -18,18 +18,17 @@ def signal_handler(sig, frame):
 
 def main():
     rospy.init_node("gello_robot_node", anonymous=True)
-    robot_type: str = "joint_position_control"
-    robot_port: int = 6001
+    port: int = 6001
     hostname: str = "127.0.0.1"
+    controller_type: str = rospy.get_param("~controller_type")
 
-    port = robot_port
-    if robot_type == "joint_position_control":
-        from gello_ros.robots.ros_joint_position_control_robot import (
-            JointPositionControlRobot,
+    if controller_type == "joint_trajectory_controller":
+        from gello_ros.robots.ros_joint_trajectory_control_robot import (
+            JointTrajectoryControlRobot,
         )
 
-        robot = JointPositionControlRobot()
-    elif robot_type == "cartesian_compliance_control":
+        robot = JointTrajectoryControlRobot()
+    elif controller_type == "cartesian_compliance_controller":
         from gello_ros.robots.ros_cartesian_compliance_control_robot import (
             CartesianComplianceControlRobot,
         )

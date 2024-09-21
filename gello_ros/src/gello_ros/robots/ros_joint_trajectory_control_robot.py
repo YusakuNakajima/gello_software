@@ -11,7 +11,7 @@ from std_msgs.msg import Float64
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
-class JointPositionControlRobot(Robot):
+class JointTrajectoryControlRobot(Robot):
     """A class representing a UR robot."""
 
     def __init__(

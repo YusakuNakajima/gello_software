@@ -175,16 +175,18 @@ class GelloAgent(Agent):
         self._mode = mode
 
         # Set control mode
-        self._robot.set_control_mode("POSITION_MODE")  # CURRENT_BASED_POSITION_MODE
+        self._robot.set_control_mode(
+            "CURRENT_MODE"
+        )  # POSITION_MODE,CURRENT_BASED_POSITION_MODE
         # Set torque
-        if self._mode == "bilateral_position":
+        if self._mode == "bilateral":
             self._robot.set_torque_mode(True)
         else:
             self._robot.set_torque_mode(False)
 
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
         dynamixel_joints = self._robot.get_joint_state()
-        if self._mode == "bilateral_position":
+        if self._mode == "bilateral":
             self._robot.command_joint_state(obs["joint_positions"])
 
         # dynamixel_joints[4] += np.pi / 4 # for DENSO robot

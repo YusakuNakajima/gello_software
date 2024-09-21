@@ -164,8 +164,16 @@ class DynamixelDriver(DynamixelDriverProtocol):
         except Exception as e:
             print(f"port: {port}, {e}")
 
-        self._stop_thread = Event()
-        self._start_read_and_write_thread()
+        self._pause_event = Event()
+        self._pause_event.set()
+        self._stop_event = Event()
+        self._start_thread()
+
+    def pause_thread(self):
+        self._pause_event.clear()
+
+    def resume_thread(self):
+        self._pause_event.set()
 
     def torque_enabled(self) -> bool:
         return self._torque_enabled
@@ -200,23 +208,24 @@ class DynamixelDriver(DynamixelDriverProtocol):
                     )
         self._control_mode = mode
 
-    def _start_read_and_write_thread(self):
+    def _start_thread(self):
         self._read_and_write_thread = Thread(target=self._read_and_write_joint_angles)
         self._read_and_write_thread.daemon = True
         self._read_and_write_thread.start()
 
     def _read_and_write_joint_angles(self):
         # Continuously read joint angles and update the joint_angles array
-        while not self._stop_thread.is_set():
-            # time.sleep(0.001)
+        while not self._stop_event.is_set():
+            self._pause_event.wait()
+
             with self._lock:
                 ######### Write the goal position for each Dynamixel servo
                 if len(self._joint_angles_command) != len(self._ids):
                     raise ValueError(
                         "The length of joint_angles must match the number of servos"
                     )
-                # if not self._torque_enabled:
-                #     raise RuntimeError("Torque must be enabled to set joint angles")
+                    # if not self._torque_enabled:
+                    raise RuntimeError("Torque must be enabled to set joint angles")
                 if all(angle == 0 for angle in self._joint_angles_command):
                     pass
                 else:
@@ -249,7 +258,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
 
                     # Clear syncwrite parameter storage
                     self._groupSyncWrite.clearParam()
-
+                # time.sleep(0.001)
                 ######### Read the joint angles for each Dynamixel servo
                 _joint_angles_read = np.zeros(len(self._ids), dtype=int)
                 _goal_joint_angles_read = np.zeros(len(self._ids), dtype=int)
@@ -287,8 +296,10 @@ class DynamixelDriver(DynamixelDriverProtocol):
                     #     raise RuntimeError(
                     #         f"Failed to get joint angles for Dynamixel with ID {dxl_id}"
                     #     )
-                # self._goal_joint_angles_read = _goal_joint_angles_read
                 self._joint_angles_read = _joint_angles_read
+                # self._goal_joint_angles_read = _goal_joint_angles_read
+                # print(f"joint angles: {self._joint_angles_read}")
+                # print(f"goal joint angles: {self._goal_joint_angles_read}")
             # self._groupSyncRead.clearParam() # TODO what does this do? should i add it
 
     def get_joints(self) -> np.ndarray:
@@ -303,7 +314,8 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self._joint_angles_command = joint_angles.copy()
 
     def close(self):
-        self._stop_thread.set()
+        self._stop_event.set()
+        self._pause_event.set()
         self._read_and_write_thread.join()
         self._portHandler.closePort()
 
