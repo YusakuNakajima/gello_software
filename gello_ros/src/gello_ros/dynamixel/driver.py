@@ -179,6 +179,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
         return self._torque_enabled
 
     def set_torque_mode(self, enable: bool):
+        self.pause_thread()
         torque_value = TORQUE_ENABLE if enable else TORQUE_DISABLE
         with self._lock:
             for dxl_id in self._ids:
@@ -192,8 +193,10 @@ class DynamixelDriver(DynamixelDriverProtocol):
                         f"Failed to set torque mode for Dynamixel with ID {dxl_id}"
                     )
         self._torque_enabled = enable
+        self.resume_thread()
 
     def set_control_mode(self, mode_name: str):
+        self.pause_thread()
         mode = CONTROL_MODES[mode_name]
         with self._lock:
             for dxl_id in self._ids:
@@ -207,6 +210,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                         f"Failed to set control mode for Dynamixel with ID {dxl_id}"
                     )
         self._control_mode = mode
+        self.resume_thread()
 
     def _start_thread(self):
         self._read_and_write_thread = Thread(target=self._read_and_write_joint_angles)

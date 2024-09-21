@@ -72,9 +72,7 @@ class DynamixelRobot(Robot):
         ), f"joint_signs: {self._joint_signs}"
         if real:
             self._driver = DynamixelDriver(joint_ids, port=port, baudrate=baudrate)
-            self._driver.pause_thread()
             self._driver.set_torque_mode(False)
-            self._driver.resume_thread()
         else:
             self._driver = FakeDynamixelDriver(joint_ids)
         self._torque_on = False
