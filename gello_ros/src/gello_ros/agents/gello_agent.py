@@ -8,6 +8,10 @@ from gello_ros.agents.agent import Agent
 from gello_ros.robots.dynamixel import DynamixelRobot
 import time
 
+import rospy
+import moveit_commander
+from geometry_msgs.msg import Wrench
+
 
 @dataclass
 class DynamixelRobotConfig:
@@ -181,8 +185,16 @@ class GelloAgent(Agent):
         # Set torque
         if self._mode == "bilateral":
             self._robot.set_torque_mode(True)
+            rospy.init_node("gello_agent_node", anonymous=True)
+            self._current_wrench = np.zeros(6)
+            rospy.Subscriber(
+                rospy.get_param("~wrench_topic", "/wrench"),
+                Wrench,
+                self.wrench_callback,
+            )
         else:
             self._robot.set_torque_mode(False)
+            self._robot.set_read_only(True)
 
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
         dynamixel_joints = self._robot.get_joint_state()
@@ -204,3 +216,16 @@ class GelloAgent(Agent):
 
     def set_torque_mode(self, torque_mode: bool):
         self._robot.set_torque_mode(torque_mode)
+
+    def wrench_callback(self, msg: Wrench):
+        self._current_wrench = np.array(
+            [
+                msg.force.x,
+                msg.force.y,
+                msg.force.z,
+                msg.torque.x,
+                msg.torque.y,
+                msg.torque.z,
+            ]
+        )
+        print(self._current_wrench)

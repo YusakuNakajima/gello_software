@@ -78,7 +78,7 @@ class DynamixelDriverProtocol(Protocol):
 class FakeDynamixelDriver(DynamixelDriverProtocol):
     def __init__(self, ids: Sequence[int]):
         self._ids = ids
-        self._joint_angles_read = np.zeros(len(ids), dtype=int)
+        self._joint_angles = np.zeros(len(ids), dtype=int)
         self._joint_currents_command = np.zeros(len(ids), dtype=int)
         self._torque_enabled = False
 
@@ -89,7 +89,7 @@ class FakeDynamixelDriver(DynamixelDriverProtocol):
             )
         if not self._torque_enabled:
             raise RuntimeError("Torque must be enabled to set joint angles")
-        self._joint_angles_read = np.array(joint_angles)
+        self._joint_angles = np.array(joint_angles)
 
     def torque_enabled(self) -> bool:
         return self._torque_enabled
@@ -98,7 +98,7 @@ class FakeDynamixelDriver(DynamixelDriverProtocol):
         self._torque_enabled = enable
 
     def get_joints(self) -> np.ndarray:
-        return self._joint_angles_read.copy()
+        return self._joint_angles.copy()
 
     def close(self):
         pass
@@ -106,7 +106,11 @@ class FakeDynamixelDriver(DynamixelDriverProtocol):
 
 class DynamixelDriver(DynamixelDriverProtocol):
     def __init__(
-        self, ids: Sequence[int], port: str = "/dev/ttyUSB0", baudrate: int = 57600
+        self,
+        ids: Sequence[int],
+        port: str = "/dev/ttyUSB0",
+        baudrate: int = 57600,
+        read_only: bool = False,
     ):
         """Initialize the DynamixelDriver class.
 
@@ -115,8 +119,9 @@ class DynamixelDriver(DynamixelDriverProtocol):
             port (str): The USB port to connect to the arm.
             baudrate (int): The baudrate for communication.
         """
+        self.read_only = read_only
         self._ids = ids
-        self._joint_angles_read = None
+        self._joint_angles = None
         self._joint_currents_command = np.zeros(len(ids), dtype=float)
         self._lock = Lock()
 
@@ -231,88 +236,96 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self._read_and_write_thread.daemon = True
         self._read_and_write_thread.start()
 
+    def _write_joint_currents(self):
+        for dxl_id, current in zip(self._ids, self._joint_currents_command):
+            current_value = int(current)
+            param_current = [
+                DXL_LOBYTE(current_value),
+                DXL_HIBYTE(current_value),
+            ]
+            # Add current value to the Syncwrite parameter storage
+            dxl_addparam_result = self._groupSyncWriteCurrent.addParam(
+                dxl_id, param_current
+            )
+            if not dxl_addparam_result:
+                raise RuntimeError(
+                    f"Failed to set current for Dynamixel with ID {dxl_id}. "
+                    f"dxl_id: {dxl_id}, param_current: {param_current}"
+                )
+
+        # Syncwrite goal current
+        dxl_comm_result = self._groupSyncWriteCurrent.txPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            raise RuntimeError("Failed to syncwrite goal current")
+        # Clear syncwrite parameter storage
+        self._groupSyncWriteCurrent.clearParam()
+
+    def _read_joint_currents(self):
+        joint_currents = np.zeros(len(self._ids), dtype=int)
+        dxl_comm_result = self._groupSyncReadCurrent.txRxPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            print(f"warning, comm failed: {dxl_comm_result}")
+        for i, dxl_id in enumerate(self._ids):
+            if self._groupSyncReadCurrent.isAvailable(
+                dxl_id, ADDR_PRESENT_CURRENT, LEN_PRESENT_CURRENT
+            ):
+                current = self._groupSyncReadCurrent.getData(
+                    dxl_id, ADDR_PRESENT_CURRENT, LEN_PRESENT_CURRENT
+                )
+                current = np.int16(np.uint16(current))
+                joint_currents[i] = current
+            else:
+                raise RuntimeError(
+                    f"Failed to get joint currents for Dynamixel with ID {dxl_id}"
+                )
+        return joint_currents
+
+    def _read_joint_angles(self):
+        joint_angles = np.zeros(len(self._ids), dtype=int)
+        dxl_comm_result = self._groupSyncReadPosition.txRxPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            print(f"warning, comm failed: {dxl_comm_result}")
+        for i, dxl_id in enumerate(self._ids):
+            if self._groupSyncReadPosition.isAvailable(
+                dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
+            ):
+                angle = self._groupSyncReadPosition.getData(
+                    dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
+                )
+                angle = np.int32(np.uint32(angle))
+                joint_angles[i] = angle
+            else:
+                raise RuntimeError(
+                    f"Failed to get joint angles for Dynamixel with ID {dxl_id}"
+                )
+        return joint_angles
+
     def _read_and_write(self):
-        _joint_angles_read = np.zeros(len(self._ids), dtype=int)
-        _joint_currents_read = np.zeros(len(self._ids), dtype=int)
         while not self._stop_event.is_set():
             self._pause_event.wait()
             st = time.time()
             with self._lock:
-                ######### Write the goal position for each Dynamixel servo
-                for dxl_id, current in zip(self._ids, self._joint_currents_command):
-                    current_value = int(current)
-                    param_current = [
-                        DXL_LOBYTE(current_value),
-                        DXL_HIBYTE(current_value),
-                    ]
-                    # Add current value to the Syncwrite parameter storage
-                    dxl_addparam_result = self._groupSyncWriteCurrent.addParam(
-                        dxl_id, param_current
-                    )
-                    if not dxl_addparam_result:
-                        raise RuntimeError(
-                            f"Failed to set current for Dynamixel with ID {dxl_id}. "
-                            f"dxl_id: {dxl_id}, param_current: {param_current}"
-                        )
-
-                # Syncwrite goal current
-                dxl_comm_result = self._groupSyncWriteCurrent.txPacket()
-                if dxl_comm_result != COMM_SUCCESS:
-                    raise RuntimeError("Failed to syncwrite goal current")
-                # Clear syncwrite parameter storage
-                self._groupSyncWriteCurrent.clearParam()
-
-                ######### Read the joint parameters for each Dynamixel servo
-                dxl_comm_result = self._groupSyncReadPosition.txRxPacket()
-                if dxl_comm_result != COMM_SUCCESS:
-                    print(f"warning, comm failed: {dxl_comm_result}")
-                    continue
-                # dxl_comm_result = self._groupSyncReadCurrent.txRxPacket()
-                # if dxl_comm_result != COMM_SUCCESS:
-                #     print(f"warning, comm failed: {dxl_comm_result}")
-                #     continue
-                for i, dxl_id in enumerate(self._ids):
-                    if self._groupSyncReadPosition.isAvailable(
-                        dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
-                    ):
-                        angle = self._groupSyncReadPosition.getData(
-                            dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
-                        )
-                        angle = np.int32(np.uint32(angle))
-                        _joint_angles_read[i] = angle
-                    else:
-                        raise RuntimeError(
-                            f"Failed to get joint angles for Dynamixel with ID {dxl_id}"
-                        )
-                    # if self._groupSyncReadCurrent.isAvailable(
-                    #     dxl_id, ADDR_PRESENT_CURRENT, LEN_PRESENT_CURRENT
-                    # ):
-                    #     current = self._groupSyncReadCurrent.getData(
-                    #         dxl_id, ADDR_PRESENT_CURRENT, LEN_PRESENT_CURRENT
-                    #     )
-                    #     current = np.int16(np.uint16(current))
-                    #     _joint_currents_read[i] = current
-                    # else:
-                    #     raise RuntimeError(
-                    #         f"Failed to get joint currents for Dynamixel with ID {dxl_id}"
-                    #     )
-                self._joint_angles_read = _joint_angles_read
-                # print(f"joint angles: {self._joint_angles_read}")
-                # self._joint_currents_read = _joint_currents_read
-                # print(f"joint currents: {self._joint_currents_read}")
-            # self._groupSyncReadPosition.clearParam() # TODO what does this do? should i add it
-            # print(f"Time to read and write: {time.time() - st} seconds")
+                if self.read_only == False:
+                    self._write_joint_currents()
+                self._joint_currents = self._read_joint_currents()
+                self._joint_angles = self._read_joint_angles()
+                # print(f"joint angles: {self._joint_angles}")
+                # print(f"joint currents: {self._joint_currents}")
+            print(f"Time to read and write: {time.time() - st} seconds")
 
     def get_joints(self) -> np.ndarray:
         # Return a copy of the joint_angles array to avoid race conditions
-        while self._joint_angles_read is None:
+        while self._joint_angles is None:
             time.sleep(0.1)
         # with self._lock:
-        _j = self._joint_angles_read.copy()
+        _j = self._joint_angles.copy()
         return _j / 2048.0 * np.pi
 
     def set_joint_currents(self, values: Sequence[float]):
         self._joint_currents_command = values.copy()
+
+    def set_read_only(self, read_only: bool):
+        self.read_only = read_only
 
     def close(self):
         self._stop_event.set()
