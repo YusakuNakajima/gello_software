@@ -8,6 +8,10 @@ from gello_ros.agents.agent import Agent
 from gello_ros.robots.dynamixel import DynamixelRobot
 import time
 
+import rospy
+import moveit_commander
+from geometry_msgs.msg import Wrench
+
 
 @dataclass
 class DynamixelRobotConfig:
@@ -174,20 +178,27 @@ class GelloAgent(Agent):
             self._robot = config.make_robot(port=port, start_joints=start_joints)
         self._mode = mode
 
-        # # Set control mode
-        # self._robot.set_control_mode("POSITION_MODE")  # CURRENT_BASED_POSITION_MODE
-        # # Set torque
-        # if self._mode == "bilateral_position":
-        #     self._robot.set_torque_mode(True)
-        # else:
-        #     self._robot.set_torque_mode(False)
-
-        # Start communication thread
-        # self._robot.start_communication_thread()
+        # Set control mode
+        self._robot.set_control_mode(
+            "CURRENT_MODE"
+        )  # POSITION_MODE,CURRENT_BASED_POSITION_MODE
+        # Set torque
+        if self._mode == "bilateral":
+            self._robot.set_torque_mode(True)
+            rospy.init_node("gello_agent_node", anonymous=True)
+            self._current_wrench = np.zeros(6)
+            rospy.Subscriber(
+                rospy.get_param("~wrench_topic", "/wrench"),
+                Wrench,
+                self.wrench_callback,
+            )
+        else:
+            self._robot.set_torque_mode(False)
+            self._robot.set_read_only(True)
 
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
         dynamixel_joints = self._robot.get_joint_state()
-        if self._mode == "bilateral_position":
+        if self._mode == "bilateral":
             self._robot.command_joint_state(obs["joint_positions"])
 
         # dynamixel_joints[4] += np.pi / 4 # for DENSO robot
@@ -205,3 +216,16 @@ class GelloAgent(Agent):
 
     def set_torque_mode(self, torque_mode: bool):
         self._robot.set_torque_mode(torque_mode)
+
+    def wrench_callback(self, msg: Wrench):
+        self._current_wrench = np.array(
+            [
+                msg.force.x,
+                msg.force.y,
+                msg.force.z,
+                msg.torque.x,
+                msg.torque.y,
+                msg.torque.z,
+            ]
+        )
+        print(self._current_wrench)

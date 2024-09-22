@@ -1,3 +1,4 @@
+import time
 from typing import Dict, Optional, Sequence, Tuple
 
 import numpy as np
@@ -19,6 +20,7 @@ class DynamixelRobot(Robot):
         gripper_config: Optional[Tuple[int, float, float]] = None,
         start_joints: Optional[np.ndarray] = None,
         start_torque_on: bool = False,
+        read_only: bool = False,
     ):
         from gello_ros.dynamixel.driver import (
             DynamixelDriver,
@@ -70,8 +72,9 @@ class DynamixelRobot(Robot):
             np.abs(self._joint_signs) == 1
         ), f"joint_signs: {self._joint_signs}"
         if real:
-            self._driver = DynamixelDriver(joint_ids, port=port, baudrate=baudrate)
-            # self._driver.set_torque_mode(False)
+            self._driver = DynamixelDriver(
+                joint_ids, port=port, baudrate=baudrate, read_only=read_only
+            )
         else:
             self._driver = FakeDynamixelDriver(joint_ids)
         self._torque_on = False
@@ -148,3 +151,6 @@ class DynamixelRobot(Robot):
 
     def get_observations(self) -> Dict[str, np.ndarray]:
         return {"joint_state": self.get_joint_state()}
+
+    def set_read_only(self, read_only: bool):
+        self._driver.set_read_only(read_only)
