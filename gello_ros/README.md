@@ -1,4 +1,19 @@
 
+# Gello ROS package
+## Overview
+This package contains the ROS interface for the Gello.
+
+
+## Usable controllers
+The compliance control is supported for UR5e.
+The joint trajectory control is supported for UR5e, cobotta, and FR3.
+
+## Teleoperation
+The teleoperation function has unilateral and bilateral modes.
+The unilateral mode is command the robot to move to the desired position.
+The bilateral mode is under development.
+
+
 # Get offset for Gello robot
 ## for UR
 python3 scripts/gello_get_offset.py --start-joints -3.14 -1.57 -1.57 -1.57 1.57 0 --joint-signs 1 1 -1 1 1 1  --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0
@@ -8,9 +23,6 @@ python3 scripts/gello_get_offset.py --start-joints 0 0 1.57 0 0 0 --joint-signs 
 python3 scripts/gello_get_offset.py --start-joints 0 0 1.57 0 1.57 0 --joint-signs 1 1 -1 1 -1 1  --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0
 ## for FR3
 python3 scripts/gello_get_offset.py --start-joints -1.57 -1.57 -1.57 -1.57 1.57 0 --joint-signs 1 1 -1 1 1 1  --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0
-
-
-
 
 ## Check serial port
 ```
