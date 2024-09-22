@@ -136,6 +136,9 @@ class DynamixelRobot(Robot):
             list((joint_state + self._joint_offsets) * self._joint_signs)
         )
 
+    def command_joint_torque(self, joint_torque: np.ndarray) -> None:
+        self._driver.set_joint_current_goals(list(joint_torque * self._joint_signs))
+
     def set_torque_mode(self, mode: bool):
         if mode == self._torque_on:
             return

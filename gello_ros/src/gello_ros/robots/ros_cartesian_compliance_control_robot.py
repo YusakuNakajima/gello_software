@@ -7,7 +7,7 @@ from gello_ros.robots.robot import Robot
 import rospy
 from moveit_commander import MoveGroupCommander
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, WrenchStamped
 
 
 from ur_pykdl import ur_kinematics
@@ -44,6 +44,14 @@ class CartesianComplianceControlRobot(Robot):
             JointState,
             self.joint_states_callback,
         )
+        rospy.Subscriber(
+            rospy.get_param("~wrench_topic"),
+            WrenchStamped,
+            self.wrench_callback,
+        )
+        self.move_group = MoveGroupCommander(
+            rospy.get_param("move_group_name", "manipulator")
+        )
         self.kinematics = ur_kinematics()
         self.ee_link = rospy.get_param("~ee_link")
 
@@ -54,6 +62,9 @@ class CartesianComplianceControlRobot(Robot):
 
     def joint_states_callback(self, msg: JointState):
         self.ros_joint_state = msg
+
+    def wrench_callback(self, msg: WrenchStamped):
+        self._wrench = msg
 
     def num_dofs(self) -> int:
         """Get the number of joints of the robot.
@@ -89,7 +100,6 @@ class CartesianComplianceControlRobot(Robot):
         Args:
             joint_state (np.ndarray): The state to command the leader robot to.
         """
-
         pose = self.kinematics.forward(joint_state, tip_link=self.ee_link)
         pose_stamped = PoseStamped()
         pose_stamped.header.stamp = rospy.Time.now()
@@ -108,11 +118,24 @@ class CartesianComplianceControlRobot(Robot):
         joints = self.get_joint_state()
         pos_quat = np.zeros(7)
         gripper_pos = np.array([joints[-1]])
+        wrench = np.array(
+            [
+                self._wrench.wrench.force.x,
+                self._wrench.wrench.force.y,
+                self._wrench.wrench.force.z,
+                self._wrench.wrench.torque.x,
+                self._wrench.wrench.torque.y,
+                self._wrench.wrench.torque.z,
+            ]
+        )
+        jacobian = self.move_group.get_jacobian_matrix(list(joints))
         return {
             "joint_positions": joints,
             "joint_velocities": joints,
             "ee_pos_quat": pos_quat,
             "gripper_position": gripper_pos,
+            "ee_wrench": wrench,
+            "jacobian": jacobian,
         }
 
 

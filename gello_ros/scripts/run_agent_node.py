@@ -18,7 +18,7 @@ from gello_ros.robots.robot import PrintRobot
 from gello_ros.zmq_core.robot_node import ZMQClientRobot
 
 import rospy
-
+from geometry_msgs.msg import Wrench
 
 agent = None
 
@@ -70,6 +70,7 @@ def main():
             # "wrist": ZMQClientCamera(port=wrist_camera_port, host=hostname),
             # "base": ZMQClientCamera(port=base_camera_port, host=hostname),
         }
+
         robot_client = ZMQClientRobot(port=robot_port, host=hostname)
     env = RobotEnv(robot_client, control_rate_hz=hz, camera_dict=camera_clients)
 
@@ -91,6 +92,7 @@ def main():
         agent = GelloAgent(
             port=gello_port, start_joints=gello_reset_joints, mode=gello_mode
         )
+        time.sleep(1)
         gello_curr_joints = np.array(env.get_obs()["joint_positions"])
 
         if gello_reset_joints.shape == gello_curr_joints.shape:

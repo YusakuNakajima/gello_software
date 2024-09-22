@@ -67,6 +67,8 @@ def main():
 
     # 関節値とJacobian計算
     joint_values = move_group.get_current_joint_values()
+    print("Joint values:")
+    print(joint_values)
     jacobian = move_group.get_jacobian_matrix(joint_values)
     jacobian_inv = np.linalg.pinv(jacobian)
 

@@ -7,8 +7,9 @@ from gello_ros.robots.robot import Robot
 import rospy
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64
-
+from geometry_msgs.msg import PoseStamped, WrenchStamped
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from moveit_commander import MoveGroupCommander
 
 
 class JointTrajectoryControlRobot(Robot):
@@ -30,10 +31,18 @@ class JointTrajectoryControlRobot(Robot):
             JointTrajectory,
             queue_size=1,
         )
+        self.move_group = MoveGroupCommander(
+            rospy.get_param("move_group_name", "manipulator")
+        )
         rospy.Subscriber(
             rospy.get_param("~joint_states_topic"),
             JointState,
             self.joint_states_callback,
+        )
+        rospy.Subscriber(
+            rospy.get_param("~wrench_topic"),
+            WrenchStamped,
+            self.wrench_callback,
         )
 
         control_freq = 100
@@ -43,6 +52,9 @@ class JointTrajectoryControlRobot(Robot):
 
     def joint_states_callback(self, msg: JointState):
         self.ros_joint_state = msg
+
+    def wrench_callback(self, msg: WrenchStamped):
+        self._wrench = msg
 
     def num_dofs(self) -> int:
         """Get the number of joints of the robot.
@@ -110,11 +122,24 @@ class JointTrajectoryControlRobot(Robot):
         joints = self.get_joint_state()
         pos_quat = np.zeros(7)
         gripper_pos = np.array([joints[-1]])
+        wrench = np.array(
+            [
+                self._wrench.wrench.force.x,
+                self._wrench.wrench.force.y,
+                self._wrench.wrench.force.z,
+                self._wrench.wrench.torque.x,
+                self._wrench.wrench.torque.y,
+                self._wrench.wrench.torque.z,
+            ]
+        )
+        jacobian = self.move_group.get_jacobian_matrix(list(joints))
         return {
             "joint_positions": joints,
             "joint_velocities": joints,
             "ee_pos_quat": pos_quat,
             "gripper_position": gripper_pos,
+            "ee_wrench": wrench,
+            "jacobian": jacobian,
         }
 
 

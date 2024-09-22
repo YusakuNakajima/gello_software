@@ -10,7 +10,6 @@ import time
 
 import rospy
 import moveit_commander
-from geometry_msgs.msg import Wrench
 
 
 @dataclass
@@ -178,6 +177,15 @@ class GelloAgent(Agent):
             self._robot = config.make_robot(port=port, start_joints=start_joints)
         self._mode = mode
 
+        # Set constants for torque feedback
+        self.stall_torque = rospy.get_param("~stall_torque", 0.52)
+        self.stall_current = rospy.get_param("~stall_current", 1.5)
+        self.torque_constant = self.stall_torque / self.stall_current
+        self.torque_rate = rospy.get_param(
+            "~torque_rate", [0.005, 0.005, 0.005, 0.005, 0.005, 0.005]
+        )
+        self.current_goal_constant = rospy.get_param("~current_goal_constant", 0.001)
+
         # Set control mode
         self._robot.set_control_mode(
             "CURRENT_MODE"
@@ -185,13 +193,7 @@ class GelloAgent(Agent):
         # Set torque
         if self._mode == "bilateral":
             self._robot.set_torque_mode(True)
-            rospy.init_node("gello_agent_node", anonymous=True)
-            self._current_wrench = np.zeros(6)
-            rospy.Subscriber(
-                rospy.get_param("~wrench_topic", "/wrench"),
-                Wrench,
-                self.wrench_callback,
-            )
+            self._robot.set_read_only(False)
         else:
             self._robot.set_torque_mode(False)
             self._robot.set_read_only(True)
@@ -199,7 +201,14 @@ class GelloAgent(Agent):
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
         dynamixel_joints = self._robot.get_joint_state()
         if self._mode == "bilateral":
-            self._robot.command_joint_state(obs["joint_positions"])
+            jacobian_inv = np.linalg.pinv(obs["jacobian"])
+            joint_torques = np.dot(jacobian_inv, obs["ee_wrench"])
+            joint_currents = joint_torques / self.torque_constant
+            dynamixel_current_goals = joint_currents / self.current_goal_constant
+            dynamixel_current_goals = np.round(
+                dynamixel_current_goals * self.torque_rate
+            ).astype(int)
+            self._robot.command_joint_torque(dynamixel_current_goals)
 
         # dynamixel_joints[4] += np.pi / 4 # for DENSO robot
         return dynamixel_joints
@@ -216,16 +225,3 @@ class GelloAgent(Agent):
 
     def set_torque_mode(self, torque_mode: bool):
         self._robot.set_torque_mode(torque_mode)
-
-    def wrench_callback(self, msg: Wrench):
-        self._current_wrench = np.array(
-            [
-                msg.force.x,
-                msg.force.y,
-                msg.force.z,
-                msg.torque.x,
-                msg.torque.y,
-                msg.torque.z,
-            ]
-        )
-        print(self._current_wrench)
