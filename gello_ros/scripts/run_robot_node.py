@@ -34,6 +34,12 @@ def main():
         )
 
         robot = CartesianComplianceControlRobot()
+    elif controller_type == "cartesian_motion_controller":
+        from gello_ros.robots.ros_cartesian_motion_control_robot import (
+            CartesianMotionControlRobot,
+        )
+
+        robot = CartesianMotionControlRobot()
 
     elif robot == "none" or robot == "print":
         robot = PrintRobot(8)

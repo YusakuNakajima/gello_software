@@ -191,18 +191,21 @@ class GelloAgent(Agent):
             "CURRENT_MODE"
         )  # POSITION_MODE,CURRENT_BASED_POSITION_MODE
         # Set torque
+        self._robot.set_torque_mode(True)
         if self._mode == "bilateral":
-            self._robot.set_torque_mode(True)
             self._robot.set_read_only(False)
         else:
-            self._robot.set_torque_mode(False)
             self._robot.set_read_only(True)
 
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
         dynamixel_joints = self._robot.get_joint_state()
+        print(obs["ee_wrench"])
         if self._mode == "bilateral":
             jacobian_inv = np.linalg.pinv(obs["jacobian"])
-            joint_torques = np.dot(jacobian_inv, obs["ee_wrench"])
+            wrench = obs["ee_wrench"]
+            wrench[2] *= -1
+            print(wrench)
+            joint_torques = np.dot(jacobian_inv, wrench)
             joint_currents = joint_torques / self.torque_constant
             dynamixel_current_goals = joint_currents / self.current_goal_constant
             dynamixel_current_goals = np.round(
