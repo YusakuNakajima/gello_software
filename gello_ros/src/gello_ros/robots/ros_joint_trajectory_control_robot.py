@@ -15,13 +15,16 @@ from moveit_commander import MoveGroupCommander
 class JointTrajectoryControlRobot(Robot):
     """A class representing a UR robot."""
 
-    def __init__(
-        self,
-        no_gripper: bool = True,
-    ):
+    def __init__(self, no_gripper: bool = True, no_wrench: bool = True):
         if not no_gripper:
-            print("supposed only no gripper")
-            exit()
+            print("supposed only cobotta gripper")
+            if not no_gripper:
+                from gello_ros.robots.cobotta_gripper import CobottaGripper
+
+                self.gripper = CobottaGripper()
+                self.gripper.connect()
+                print("gripper connected")
+
         self.joint_names_order = rospy.get_param("~joint_names_order")
         self.joint_max_vel = rospy.get_param("~joint_max_vel")
         self.joint_pos_limits_upper = rospy.get_param("~joint_pos_limits_upper")
@@ -32,23 +35,25 @@ class JointTrajectoryControlRobot(Robot):
             queue_size=1,
         )
         self.move_group = MoveGroupCommander(
-            rospy.get_param("move_group_name", "manipulator")
+            rospy.get_param("~move_group_name", "manipulator")
         )
         rospy.Subscriber(
             rospy.get_param("~joint_states_topic"),
             JointState,
             self.joint_states_callback,
         )
-        rospy.Subscriber(
-            rospy.get_param("~wrench_topic"),
-            WrenchStamped,
-            self.wrench_callback,
-        )
+        if not no_wrench:
+            rospy.Subscriber(
+                rospy.get_param("~wrench_topic"),
+                WrenchStamped,
+                self.wrench_callback,
+            )
 
         control_freq = 100
         self._min_traj_dur = 5.0 / control_freq
         self._speed_scale = 1
         self._use_gripper = not no_gripper
+        self._use_FTsensor = not no_wrench
 
     def joint_states_callback(self, msg: JointState):
         self.ros_joint_state = msg
@@ -112,6 +117,10 @@ class JointTrajectoryControlRobot(Robot):
                     self._min_traj_dur,
                 )
             )
+        if self._use_gripper:
+            gripper_pos = joint_state[-1]
+            print(gripper_pos)
+            # self.gripper.move(gripper_pos, 255, 10)
 
         # set the target convergence time of the JTC to match the joint that tasks the longest time to move
         point.time_from_start = rospy.Duration(max(dur) / self._speed_scale)
@@ -122,17 +131,22 @@ class JointTrajectoryControlRobot(Robot):
         joints = self.get_joint_state()
         pos_quat = np.zeros(7)
         gripper_pos = np.array([joints[-1]])
-        wrench = np.array(
-            [
-                self._wrench.wrench.force.x,
-                self._wrench.wrench.force.y,
-                self._wrench.wrench.force.z,
-                self._wrench.wrench.torque.x,
-                self._wrench.wrench.torque.y,
-                self._wrench.wrench.torque.z,
-            ]
-        )
-        jacobian = self.move_group.get_jacobian_matrix(list(joints))
+        if self._use_FTsensor:
+            wrench = np.array(
+                [
+                    self._wrench.wrench.force.x,
+                    self._wrench.wrench.force.y,
+                    self._wrench.wrench.force.z,
+                    self._wrench.wrench.torque.x,
+                    self._wrench.wrench.torque.y,
+                    self._wrench.wrench.torque.z,
+                ]
+            )
+            jacobian = self.move_group.get_jacobian_matrix(list(joints))
+
+        else:
+            wrench = np.zeros(6)
+            jacobian = None
         return {
             "joint_positions": joints,
             "joint_velocities": joints,

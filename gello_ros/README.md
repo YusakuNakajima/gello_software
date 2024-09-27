@@ -3,12 +3,14 @@
 ## for UR
 python3 scripts/gello_get_offset.py --start-joints -3.14 -1.57 -1.57 -1.57 1.57 0 --joint-signs 1 1 -1 1 1 1  --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0
 ## for cobotta
-python3 scripts/gello_get_offset.py --start-joints 0 0 1.57 0 0 0 --joint-signs 1 1 -1 1 -1 1  --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0
+python3 scripts/gello_get_offset.py --start-joints 0 0 1.57 0 0 0 --joint-signs 1 1 -1 1 -1 1  --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT88YXAT-if00-port0
 
 python3 scripts/gello_get_offset.py --start-joints 0 0 1.57 0 1.57 0 --joint-signs 1 1 -1 1 -1 1  --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0
 ## for FR3
 python3 scripts/gello_get_offset.py --start-joints -1.57 -1.57 -1.57 -1.57 1.57 0 --joint-signs 1 1 -1 1 1 1  --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0
 
+## Serial
+/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT88YXAT-if00-port0 
 
 
 
