@@ -313,7 +313,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 self._joint_currents = self._read_joint_currents()
                 self._joint_angles = self._read_joint_angles()
                 # print(f"joint angles: {self._joint_angles}")
-                print(f"joint currents: {self._joint_currents}")
+                # print(f"joint currents: {self._joint_currents}")
             # print(f"Time to read and write: {time.time() - st} seconds")
 
     def get_joints(self) -> np.ndarray:
