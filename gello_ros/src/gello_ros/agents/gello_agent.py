@@ -134,7 +134,7 @@ PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
             3 * np.pi / 2,
         ),
         joint_signs=(1, -1, 1, 1, -1, 1),
-        gripper_config=None,  # (7, 96, 54),
+        gripper_config=(7, 96, 54),
     ),
     # Onolab FR3
     # "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0": DynamixelRobotConfig(

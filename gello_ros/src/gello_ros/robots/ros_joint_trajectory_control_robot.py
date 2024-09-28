@@ -86,6 +86,10 @@ class JointTrajectoryControlRobot(Robot):
         self.robot_joints = np.array(
             [joint_positions_dict[name] for name in self.joint_names_order]
         )
+        if self._use_gripper:
+            self.robot_joints = np.append(
+                self.robot_joints, self.gripper.get_current_position()
+            )
 
         return self.robot_joints
 
@@ -118,9 +122,13 @@ class JointTrajectoryControlRobot(Robot):
                 )
             )
         if self._use_gripper:
-            gripper_pos = joint_state[-1]
-            print(gripper_pos)
-            # self.gripper.move(gripper_pos, 255, 10)
+            dynamixel_gripper_close_rate = joint_state[-1]
+            gripper_min_pos = self.gripper.get_min_position()
+            gripper_max_pos = self.gripper.get_max_position()
+            gripper_pos = gripper_min_pos + (gripper_max_pos - gripper_min_pos) * (
+                1 - dynamixel_gripper_close_rate
+            )
+            self.gripper.move(position=gripper_pos, speed=50, force=6)
 
         # set the target convergence time of the JTC to match the joint that tasks the longest time to move
         point.time_from_start = rospy.Duration(max(dur) / self._speed_scale)
@@ -142,7 +150,7 @@ class JointTrajectoryControlRobot(Robot):
                     self._wrench.wrench.torque.z,
                 ]
             )
-            jacobian = self.move_group.get_jacobian_matrix(list(joints))
+            jacobian = self.move_group.get_jacobian_matrix(list(joints[0:5]))
 
         else:
             wrench = np.zeros(6)

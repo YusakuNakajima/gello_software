@@ -35,6 +35,7 @@ joint_trajectory_controller_command_topic: "/cobotta/arm_controller/command"
 joint_states_topic: "/joint_states"
 controller_type: "joint_trajectory_controller" 
 gello_mode: "unilateral" 
+use_gripper: True
 
 gello_start_joints:
   - 0.0  # joint_1
@@ -43,4 +44,3 @@ gello_start_joints:
   - 0.0  # joint_4
   - !degrees 90.0  # joint_5
   - 0.0  # joint_6
-  # - 0.0 #gripper

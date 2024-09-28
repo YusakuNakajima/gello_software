@@ -21,25 +21,26 @@ def main():
     port: int = 6001
     hostname: str = "127.0.0.1"
     controller_type: str = rospy.get_param("~controller_type")
+    no_gripper: bool = not rospy.get_param("~use_gripper")
 
     if controller_type == "joint_trajectory_controller":
         from gello_ros.robots.ros_joint_trajectory_control_robot import (
             JointTrajectoryControlRobot,
         )
 
-        robot = JointTrajectoryControlRobot()
+        robot = JointTrajectoryControlRobot(no_gripper)
     elif controller_type == "cartesian_compliance_controller":
         from gello_ros.robots.ros_cartesian_compliance_control_robot import (
             CartesianComplianceControlRobot,
         )
 
-        robot = CartesianComplianceControlRobot()
+        robot = CartesianComplianceControlRobot(no_gripper)
     elif controller_type == "cartesian_motion_controller":
         from gello_ros.robots.ros_cartesian_motion_control_robot import (
             CartesianMotionControlRobot,
         )
 
-        robot = CartesianMotionControlRobot()
+        robot = CartesianMotionControlRobot(no_gripper)
 
     elif robot == "none" or robot == "print":
         robot = PrintRobot(8)
