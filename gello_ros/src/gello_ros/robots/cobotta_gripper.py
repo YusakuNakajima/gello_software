@@ -120,7 +120,6 @@ class CobottaGripper:
             "Next",
         ]
         res = self.m_bcapclient.controller_execute(self.hCtrl, "HandMoveA", param)
-        print(res)
         self._current_position = clip_pos
 
     def move_force(self, force: int, direction: bool) -> Tuple[bool, int]:
@@ -145,7 +144,6 @@ class CobottaGripper:
         ]
 
         res = self.m_bcapclient.controller_execute(self.hCtrl, "HandMoveH", param)
-        print(res)
 
     def move(self, position: float, speed: int, force: int) -> Tuple[bool, int]:
         """Sends commands to start moving towards the given position, with the specified speed and force.
@@ -172,7 +170,6 @@ class CobottaGripper:
             and clip_pos < self._close_threthold
             and self._dead_time <= 0
         ):
-            print("close")
             self.move_force(clip_force, True)
             self._gripper_state = GripperState.CLOSE
             self._dead_time = 7
@@ -181,11 +178,9 @@ class CobottaGripper:
             and clip_pos > self._open_threthold
             and self._dead_time <= 0
         ):
-            print("open")
             self.move_position(self._max_position, clip_speed)
             self._gripper_state = GripperState.OPEN
             self._dead_time = 1
-        print(self._dead_time)
         return clip_pos
 
 
