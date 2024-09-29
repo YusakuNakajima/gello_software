@@ -99,7 +99,6 @@ def main():
             max_delta = (np.abs(gello_curr_joints - gello_reset_joints)).max()
             steps = min(int(max_delta / 0.01), 100)
             for jnt in np.linspace(gello_curr_joints, gello_reset_joints, steps):
-                print(jnt)
                 env.step(jnt)
                 time.sleep(0.001)
 

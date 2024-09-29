@@ -199,12 +199,10 @@ class GelloAgent(Agent):
 
     def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
         dynamixel_joints = self._robot.get_joint_state()
-        print(obs["ee_wrench"])
         if self._mode == "bilateral":
             jacobian_inv = np.linalg.pinv(obs["jacobian"])
             wrench = obs["ee_wrench"]
             wrench[2] *= -1
-            print(wrench)
             joint_torques = np.dot(jacobian_inv, wrench)
             joint_currents = joint_torques / self.torque_constant
             dynamixel_current_goals = joint_currents / self.current_goal_constant
