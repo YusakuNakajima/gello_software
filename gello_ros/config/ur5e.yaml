@@ -37,10 +37,11 @@ cartesian_compliance_controller_command_topic: "/target_frame"
 cartesian_motion_controller_command_topic: "/target_frame"
 ee_link: "pestle_tip"
 joint_states_topic: "/joint_states"
-controller_type: "cartesian_motion_controller" # "joint_trajectory_controller" or "cartesian_compliance_controller"
+controller_type: "joint_trajectory_controller" # "joint_trajectory_controller" or "cartesian_compliance_controller"
 wrench_topic: "/wrench/filtered"
 gello_mode: "unilateral" # "unilateral" or "bilateral"
 use_gripper: False
+gello_port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0"
 
 gello_start_joints:
   - !degrees  -180.0  # shoulder_pan_joint
@@ -60,3 +61,6 @@ torque_rate:
   - 0.003
   - 0.003
 current_goal_constant: 0.001
+
+agent_name: "gello" # "gello" or "act"
+control_hz: 100

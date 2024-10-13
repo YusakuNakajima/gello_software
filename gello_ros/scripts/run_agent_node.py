@@ -42,24 +42,24 @@ def print_color(*args, color=None, attrs=(), **kwargs):
 def main():
     rospy.init_node("gello_agent_node", anonymous=True)
 
-    agent: str = "gello"
+    agent: str = rospy.get_param("~agent_name","gello")
     robot_port: int = 6001
     wrist_camera_port: int = 5000
     base_camera_port: int = 5001
     hostname: str = "127.0.0.1"
     robot_type: str = None  # only needed for quest agent or spacemouse agent
-    hz: int = 100
+    hz: int = rospy.get_param("~control_hz", 100)
     start_joints: List[float] = rospy.get_param("~gello_start_joints")
     gello_mode: str = rospy.get_param("~gello_mode")
 
     print(f"start_joints: {start_joints}")
 
-    gello_port: Optional[str] = None
     mock: bool = False
-    use_save_interface: bool = False
-    data_dir: str = "~/bc_data"
+    use_save_interface: bool = rospy.get_param("~save_episode", False)
+    data_dir: str = "./train_data"
     verbose: bool = False
-    no_gripper: bool = not rospy.get_param("~use_gripper")
+    no_gripper: bool = not rospy.get_param("~use_gripper", False)
+    gello_port: str = rospy.get_param("~gello_port", None)
 
     if mock:
         robot_client = PrintRobot(8, dont_print=True)
