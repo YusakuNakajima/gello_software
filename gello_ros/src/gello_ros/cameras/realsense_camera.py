@@ -24,7 +24,14 @@ class RealSenseCamera(CameraDriver):
     def __repr__(self) -> str:
         return f"RealSenseCamera(device_id={self._device_id})"
 
-    def __init__(self, device_id: Optional[str] = None, flip: bool = False):
+    def __init__(
+        self,
+        device_id: Optional[str] = None,
+        flip: bool = False,
+        hight: int = 480,
+        width: int = 640,
+        fps: int = 60,
+    ):
         import pyrealsense2 as rs
 
         self._device_id = device_id
@@ -41,9 +48,10 @@ class RealSenseCamera(CameraDriver):
             self._pipeline = rs.pipeline()
             config = rs.config()
             config.enable_device(device_id)
-
-        config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-        config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+        print(f"Starting camera with device_id: {device_id}")
+        print(f"Camera hight: {hight}, width: {width}, fps: {fps}")
+        config.enable_stream(rs.stream.depth, width, hight, rs.format.z16, fps)
+        config.enable_stream(rs.stream.color, width, hight, rs.format.bgr8, fps)
         self._pipeline.start(config)
         self._flip = flip
 

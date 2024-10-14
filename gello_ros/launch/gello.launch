@@ -8,13 +8,14 @@
     <rosparam command="load" file="$(arg robot_config)" />
     <rosparam command="load" file="$(arg common_config)" />
   </node>
-  
+
   <node name="gello_robot_server" pkg="gello_ros" type="run_robot_node.py" output="screen">
     <rosparam command="load" file="$(arg robot_config)" />
     <rosparam command="load" file="$(arg common_config)" />
   </node>
-  
-  <node name="gello_agent" pkg="gello_ros" type="run_agent_node.py" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
+
+  <node name="gello_agent" pkg="gello_ros" type="run_agent_node.py" output="screen"
+    launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
     <rosparam command="load" file="$(arg robot_config)" />
     <rosparam command="load" file="$(arg common_config)" />
     <param name="save_episode" value="$(arg save_episode)" />

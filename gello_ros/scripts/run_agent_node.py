@@ -198,6 +198,7 @@ def main():
     action_replay = []
     current_episode_number = 0
     while True:
+        st_per_step = time.time()
         if use_save_interface:
             start_time = time.time()
             # init buffers
@@ -210,8 +211,6 @@ def main():
                     print("All episodes done")
                     exit()
                 for i in range(number_of_steps):
-                    st = time.time()
-                    # print progress
                     num = time.time() - start_time
                     message = f"\r Episode number: {current_episode_number} Time passed: {round(num, 2)}          "
                     print_color(
@@ -225,8 +224,7 @@ def main():
                     obs = env.step(action)
                     action_replay.append(action)
                     obs_replay.append(obs)
-                    print("Time per step", time.time() - st)
-                    # need to add camera capture here
+
                 print("Episode done, saving now")
                 save_episode(current_episode_number, obs_replay, action_replay)
             elif state == "normal":
@@ -250,6 +248,8 @@ def main():
             )
             action = agent.act(obs)
             obs = env.step(action)
+
+        print("Time per step", time.time() - st_per_step)
 
 
 if __name__ == "__main__":
