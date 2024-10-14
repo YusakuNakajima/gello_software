@@ -18,7 +18,7 @@ def launch_server(host: str,port: int, camera_id: int):
 def main():
     ids = get_device_ids()
     camera_host = rospy.get_param("~default_hostname", "127.0.0.1")
-    camera_port = rospy.get_param("~default_camera_port", 6002)
+    camera_port = rospy.get_param("~default_camera_port", 7001)
     camera_servers = []
     for camera_id in ids:
         # start a python process for each camera

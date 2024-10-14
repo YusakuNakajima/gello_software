@@ -12,12 +12,12 @@ import numpy as np
 
 from gello_ros.agents.agent import BimanualAgent, DummyAgent
 from gello_ros.agents.gello_agent import GelloAgent
-from gello_ros.data_utils.format_obs import save_frame
+from gello_ros.data_utils.format_obs import save_replay_data
+from gello_ros.data_utils.keyboard_interface import KBReset
 from gello_ros.env import RobotEnv
 from gello_ros.robots.robot import PrintRobot
 from gello_ros.zmq_core.robot_node import ZMQClientRobot
 from gello_ros.zmq_core.camera_node import ZMQClientCamera
-
 import rospy
 from geometry_msgs.msg import Wrench
 
@@ -38,15 +38,20 @@ def print_color(*args, color=None, attrs=(), **kwargs):
     if len(args) > 0:
         args = tuple(termcolor.colored(arg, color=color, attrs=attrs) for arg in args)
     print(*args, **kwargs)
+
+
 # def save_episode(save_path,  obs, action):
+
 
 def main():
     rospy.init_node("gello_agent_node", anonymous=True)
 
-    agent: str = rospy.get_param("~agent_name","gello")
-    robot_port: int = rospy.get_param("~default_robot_port",6001)
-    base_camera_port: int = rospy.get_param("~default_camera_port",6002)
-    hostname: str = rospy.get_param("~default_hostname","127.0.0.1")
+    agent: str = rospy.get_param("~agent_name", "gello")
+    hostname: str = rospy.get_param("~default_hostname", "127.0.0.1")
+    robot_port: int = rospy.get_param("~default_robot_port", 6001)
+    camera_port: int = rospy.get_param("~default_camera_port", 7001)
+    camera_names: List[str] = rospy.get_param("~camera_names", ["base"])
+
     robot_type: str = None  # only needed for quest agent or spacemouse agent
     hz: int = rospy.get_param("~control_hz", 100)
     start_joints: List[float] = rospy.get_param("~gello_start_joints")
@@ -56,22 +61,24 @@ def main():
 
     mock: bool = False
     use_save_interface: bool = rospy.get_param("~save_episode", False)
-    data_dir: str = "./train_data"
     verbose: bool = False
     no_gripper: bool = not rospy.get_param("~use_gripper", False)
     gello_port: str = rospy.get_param("~gello_port", None)
     number_of_episodes: int = rospy.get_param("~number_of_episodes", 1)
     number_of_steps: int = rospy.get_param("~number_of_steps", 300)
 
+    if use_save_interface:
+        kb_interface = KBReset()
+
     if mock:
         robot_client = PrintRobot(8, dont_print=True)
         camera_clients = {}
     else:
-        camera_clients = {
-            # you can optionally add camera nodes here for imitation learning purposes
-            # "wrist": ZMQClientCamera(port=wrist_camera_port, host=hostname),
-            "base": ZMQClientCamera(port=base_camera_port, host=hostname),
-        }
+        camera_clients = {}
+        for i, cam_name in enumerate(camera_names):
+            camera_clients[cam_name] = ZMQClientCamera(
+                port=camera_port + i, host=hostname
+            )
         robot_client = ZMQClientRobot(port=robot_port, host=hostname)
     env = RobotEnv(robot_client, control_rate_hz=hz, camera_dict=camera_clients)
 
@@ -183,61 +190,64 @@ def main():
             )
         exit()
 
-    if use_save_interface:
-        from gello_ros.data_utils.keyboard_interface import KBReset
-
-        kb_interface = KBReset()
-
     print_color("\nStart 🚀🚀🚀", color="green", attrs=("bold",))
 
     save_path = None
     start_time = time.time()
-    obs_replay=[]
-    action_replay=[]
+    obs_replay = []
+    action_replay = []
+    current_episode_number = 0
     while True:
-        num = time.time() - start_time
-        message = f"\rTime passed: {round(num, 2)}          "
-        print_color(
-            message,
-            color="white",
-            attrs=("bold",),
-            end="",
-            flush=True,
-        )
-        dt = datetime.datetime.now()
-       
         if use_save_interface:
-            for i in range(number_of_episodes):
-                # init buffers
-                obs_replay = []
-                action_replay = []
-                state = kb_interface.update() # update requires up to approximately 3ms 
-                if state == "start":
-                    for i in range(number_of_steps): 
-                        action = agent.act(obs)
-                        obs = env.step(action)
-                        action_replay.append(action)
-                        obs_replay.append(obs)
-                        # need to add camera capture here
-                    print("Episode done, saving now")
-                    dt_time = datetime.datetime.now()
-                    save_path = (
-                        Path(data_dir).expanduser()
-                        / dt_time.strftime("%m%d_%H%M%S")
+            start_time = time.time()
+            # init buffers
+            obs_replay = []
+            action_replay = []
+            state = kb_interface.update()  # update requires up to approximately 3ms
+            if state == "start":
+                current_episode_number += 1
+                if current_episode_number > number_of_episodes:
+                    print("All episodes done")
+                    exit()
+                for i in range(number_of_steps):
+                    st = time.time()
+                    # print progress
+                    num = time.time() - start_time
+                    message = f"\r Episode number: {current_episode_number} Time passed: {round(num, 2)}          "
+                    print_color(
+                        message,
+                        color="white",
+                        attrs=("bold",),
+                        end="",
+                        flush=True,
                     )
-                    save_path.mkdir(parents=True, exist_ok=True)
-                    assert save_path is not None, "something went wrong"
-                    save_frame(save_path, dt, obs, action)
-                    print(f"Saving to {save_path}")
-                elif state == "normal":
                     action = agent.act(obs)
                     obs = env.step(action)
-                elif state == "quit":
-                    print("Finished recording")
-                    break
-                else:
-                    raise ValueError(f"Invalid state {state}")
+                    action_replay.append(action)
+                    obs_replay.append(obs)
+                    print("Time per step", time.time() - st)
+                    # need to add camera capture here
+                print("Episode done, saving now")
+                save_replay_data(current_episode_number, obs_replay, action_replay)
+            elif state == "normal":
+                action = agent.act(obs)
+                obs = env.step(action)
+            elif state == "quit":
+                print("Quite episode recording")
+                exit()
+            else:
+                raise ValueError(f"Invalid state {state}")
+
         else:
+            num = time.time() - start_time
+            message = f"\rTime passed: {round(num, 2)}          "
+            print_color(
+                message,
+                color="white",
+                attrs=("bold",),
+                end="",
+                flush=True,
+            )
             action = agent.act(obs)
             obs = env.step(action)
 
