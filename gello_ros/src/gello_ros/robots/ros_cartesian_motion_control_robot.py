@@ -19,9 +19,9 @@ class CartesianMotionControlRobot(Robot):
 
     def __init__(
         self,
-        no_gripper: bool = True,
+        use_gripper: bool = False,
     ):
-        if not no_gripper:
+        if use_gripper:
             print("supposed only no gripper")
             exit()
 
@@ -59,7 +59,7 @@ class CartesianMotionControlRobot(Robot):
         control_freq = 100
         self._min_traj_dur = 5.0 / control_freq
         self._speed_scale = 1
-        self._use_gripper = not no_gripper
+        self._use_gripper = use_gripper
 
     def joint_states_callback(self, msg: JointState):
         self.ros_joint_state = msg
@@ -142,7 +142,7 @@ class CartesianMotionControlRobot(Robot):
 
 def main():
     rospy.init_node("ros_robot")
-    ros_robot = CartesianMotionControlRobot(no_gripper=True)
+    ros_robot = CartesianMotionControlRobot(use_gripper=False)
 
 
 if __name__ == "__main__":

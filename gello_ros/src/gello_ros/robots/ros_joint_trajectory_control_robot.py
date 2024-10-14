@@ -15,10 +15,10 @@ from moveit_commander import MoveGroupCommander
 class JointTrajectoryControlRobot(Robot):
     """A class representing a UR robot."""
 
-    def __init__(self, no_gripper: bool = True, no_wrench: bool = True):
-        if not no_gripper:
-            print("supposed only cobotta gripper")
-            if not no_gripper:
+    def __init__(self, use_gripper: bool = True, use_FT_sensor: bool = True):
+        if use_gripper:
+            print("caution: supposed only cobotta gripper")
+            if use_gripper:
                 from gello_ros.robots.cobotta_gripper import CobottaGripper
 
                 self.gripper = CobottaGripper()
@@ -42,7 +42,7 @@ class JointTrajectoryControlRobot(Robot):
             JointState,
             self.joint_states_callback,
         )
-        if not no_wrench:
+        if use_FT_sensor:
             rospy.Subscriber(
                 rospy.get_param("~wrench_topic"),
                 WrenchStamped,
@@ -52,8 +52,8 @@ class JointTrajectoryControlRobot(Robot):
         self.control_hz = rospy.get_param("~control_hz", 100)
         self._min_traj_dur = 5.0 / self.control_hz
         self._speed_scale = 1
-        self._use_gripper = not no_gripper
-        self._use_FTsensor = not no_wrench
+        self._use_gripper = use_gripper
+        self._use_FTsensor = use_FT_sensor
         self.previous_joint_positions = None
         self.robot_joint_positions = None
         self.robot_joint_velocities = None
@@ -180,7 +180,7 @@ class JointTrajectoryControlRobot(Robot):
 
 def main():
     rospy.init_node("ros_robot")
-    ros_robot = ROSRobot(no_gripper=True)
+    ros_robot = ROSRobot(use_gripper=False)
 
 
 if __name__ == "__main__":
