@@ -240,8 +240,6 @@ def main():
         else:
             action = agent.act(obs)
             obs = env.step(action)
-            print("action", action)
-            print("obs", obs)
 
 
 if __name__ == "__main__":
