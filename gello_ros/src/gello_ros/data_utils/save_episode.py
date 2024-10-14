@@ -1,10 +1,12 @@
 import os
+import datetime
 import h5py
-from time import time
 import rospy
 
+timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-def save_replay_data(episode_number,obs_replay, action_replay):
+
+def save_episode(episode_number, obs_replay, action_replay):
     """
     Save observations and actions to an HDF5 file.
 
@@ -15,25 +17,13 @@ def save_replay_data(episode_number,obs_replay, action_replay):
     """
     # configration dictionary
     cfg = {
-        "camera_names": rospy.get_param(
-            "~camera_names", ["base"]
-        ), 
-        "cam_width": rospy.get_param(
-            "~camera_width", 640
-        ), 
-        "cam_height": rospy.get_param(
-            "~camera_height", 480
-        ),  
-        "state_dim": rospy.get_param("~state_dim", 6),  
-        "action_dim": rospy.get_param(
-            "~action_dim", 6
-        ),  
-        "save_episode_dir": rospy.get_param(
-            "~save_episode_dir", "./episode_data"
-        ),  
-        "task_name": rospy.get_param(
-            "~task_name", "default"
-        ),
+        "camera_names": rospy.get_param("~camera_names", ["base"]),
+        "cam_width": rospy.get_param("~camera_width", 640),
+        "cam_height": rospy.get_param("~camera_height", 480),
+        "state_dim": rospy.get_param("~state_dim", 6),
+        "action_dim": rospy.get_param("~action_dim", 6),
+        "save_episode_dir": rospy.get_param("~save_episode_dir", "./episode_data"),
+        "task_name": rospy.get_param("~task_name", "default"),
     }
 
     # create a dictionary to store the data
@@ -57,12 +47,10 @@ def save_replay_data(episode_number,obs_replay, action_replay):
             img_name = f"{cam_name}_rgb"
             data_dict[f"/observations/images/{img_name}"].append(o[img_name])
 
-    t0 = time()
     max_timesteps = len(data_dict["/observations/qpos"])
-    
 
     # create data dir if it doesn't exist
-    data_dir = os.path.join(cfg["save_episode_dir"], cfg["task_name"])
+    data_dir = os.path.join(cfg["save_episode_dir"], timestamp, cfg["task_name"])
     print(f"Saving data to {data_dir}")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)

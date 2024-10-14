@@ -12,7 +12,7 @@ import numpy as np
 
 from gello_ros.agents.agent import BimanualAgent, DummyAgent
 from gello_ros.agents.gello_agent import GelloAgent
-from gello_ros.data_utils.format_obs import save_replay_data
+from gello_ros.data_utils.save_episode import save_episode
 from gello_ros.data_utils.keyboard_interface import KBReset
 from gello_ros.env import RobotEnv
 from gello_ros.robots.robot import PrintRobot
@@ -228,7 +228,7 @@ def main():
                     print("Time per step", time.time() - st)
                     # need to add camera capture here
                 print("Episode done, saving now")
-                save_replay_data(current_episode_number, obs_replay, action_replay)
+                save_episode(current_episode_number, obs_replay, action_replay)
             elif state == "normal":
                 action = agent.act(obs)
                 obs = env.step(action)
