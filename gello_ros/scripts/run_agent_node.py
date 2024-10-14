@@ -62,7 +62,6 @@ def main():
     mock: bool = False
     use_save_interface: bool = rospy.get_param("~save_episode", False)
     verbose: bool = False
-    no_gripper: bool = not rospy.get_param("~use_gripper", False)
     gello_port: str = rospy.get_param("~gello_port", None)
     number_of_episodes: int = rospy.get_param("~number_of_episodes", 1)
     number_of_steps: int = rospy.get_param("~number_of_steps", 300)
@@ -198,7 +197,7 @@ def main():
     action_replay = []
     current_episode_number = 0
     while True:
-        st_per_step = time.time()
+        # st_per_step = time.time()
         if use_save_interface:
             start_time = time.time()
             # init buffers
@@ -249,7 +248,7 @@ def main():
             action = agent.act(obs)
             obs = env.step(action)
 
-        print("Time per step", time.time() - st_per_step)
+        # print("Time per step", time.time() - st_per_step)
 
 
 if __name__ == "__main__":

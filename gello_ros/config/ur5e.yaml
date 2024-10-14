@@ -41,10 +41,11 @@ controller_type: "joint_trajectory_controller" # "joint_trajectory_controller" o
 wrench_topic: "/wrench/filtered"
 gello_mode: "unilateral" # "unilateral" or "bilateral"
 use_gripper: False
+use_FT_sensor: True
 gello_port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0"
 
 gello_start_joints:
-  - !degrees  -180.0  # shoulder_pan_joint
+  - !degrees  -90.0  # shoulder_pan_joint
   - !degrees  -90.0  # shoulder_lift_joint
   - !degrees  -90.0  # elbow_joint
   - !degrees  -90.0  # wrist_1_joint

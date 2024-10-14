@@ -24,6 +24,7 @@ def save_episode(episode_number, obs_replay, action_replay):
         "action_dim": rospy.get_param("~action_dim", 6),
         "save_episode_dir": rospy.get_param("~save_episode_dir", "./episode_data"),
         "task_name": rospy.get_param("~task_name", "default"),
+        "use_FT_sensor": rospy.get_param("~use_FT_sensor", False),
     }
 
     # create a dictionary to store the data
@@ -36,12 +37,17 @@ def save_episode(episode_number, obs_replay, action_replay):
     for cam_name in cfg["camera_names"]:
         img_name = f"{cam_name}_rgb"
         data_dict[f"/observations/images/{img_name}"] = []
+    # add FT sensor data
+    if cfg["use_FT_sensor"]:
+        data_dict["/observations/wrench"] = []
 
     # store the observations and actions
     for o, a in zip(obs_replay, action_replay):
         data_dict["/observations/qpos"].append(o["joint_positions"])
         data_dict["/observations/qvel"].append(o["joint_velocities"])
         data_dict["/action"].append(a)
+        if cfg["use_FT_sensor"]:
+            data_dict["/observations/wrench"].append(o["ee_wrench"])
         # store the images
         for cam_name in cfg["camera_names"]:
             img_name = f"{cam_name}_rgb"
@@ -78,6 +84,8 @@ def save_episode(episode_number, obs_replay, action_replay):
         qpos = obs.create_dataset("qpos", (max_timesteps, cfg["state_dim"]))
         qvel = obs.create_dataset("qvel", (max_timesteps, cfg["state_dim"]))
         action = root.create_dataset("action", (max_timesteps, cfg["action_dim"]))
+        if cfg["use_FT_sensor"]:
+            wrench = obs.create_dataset("wrench", (max_timesteps, cfg["state_dim"]))
 
         # store the data in the corresponding dataset
         for name, array in data_dict.items():

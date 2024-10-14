@@ -12,10 +12,10 @@ camera_width: 640
 camera_fps: 60
 
 # imitation learning config
-task_name: "test_move"
+task_name: "cup_push"
 save_episode_dir: '/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/episode_data'  # Directory for saving datasets
-number_of_episodes: 10
-number_of_steps: 100
+number_of_episodes: 20
+number_of_steps: 1000
 state_dim: 6
 action_dim: 6
 

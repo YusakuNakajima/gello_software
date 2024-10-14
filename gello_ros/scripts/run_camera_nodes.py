@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import signal
 from dataclasses import dataclass
 from multiprocessing import Process

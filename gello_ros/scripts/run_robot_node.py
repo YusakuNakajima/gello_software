@@ -18,29 +18,29 @@ def signal_handler(sig, frame):
 
 def main():
     rospy.init_node("gello_robot_node", anonymous=True)
-    robot_port: int = rospy.get_param("~default_robot_port",6001)
-    hostname: str =  rospy.get_param("~default_hostname","127.0.0.1")
+    robot_port: int = rospy.get_param("~default_robot_port", 6001)
+    hostname: str = rospy.get_param("~default_hostname", "127.0.0.1")
     controller_type: str = rospy.get_param("~controller_type")
-    no_gripper: bool = not rospy.get_param("~use_gripper")
+    use_gripper: bool = rospy.get_param("~use_gripper")
 
     if controller_type == "joint_trajectory_controller":
         from gello_ros.robots.ros_joint_trajectory_control_robot import (
             JointTrajectoryControlRobot,
         )
 
-        robot = JointTrajectoryControlRobot(no_gripper)
+        robot = JointTrajectoryControlRobot(use_gripper)
     elif controller_type == "cartesian_compliance_controller":
         from gello_ros.robots.ros_cartesian_compliance_control_robot import (
             CartesianComplianceControlRobot,
         )
 
-        robot = CartesianComplianceControlRobot(no_gripper)
+        robot = CartesianComplianceControlRobot(use_gripper)
     elif controller_type == "cartesian_motion_controller":
         from gello_ros.robots.ros_cartesian_motion_control_robot import (
             CartesianMotionControlRobot,
         )
 
-        robot = CartesianMotionControlRobot(no_gripper)
+        robot = CartesianMotionControlRobot(use_gripper)
 
     elif robot == "none" or robot == "print":
         robot = PrintRobot(8)
