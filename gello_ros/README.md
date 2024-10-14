@@ -28,3 +28,9 @@ gripper close (degrees)       71.291015625
 ## boudrate
 4M -> too fast, unstable communication
 2M -> stable communication
+
+## Imitation learning by ACT
+The Action Chunking with Transformer (ACT) scripts are referenced from the [Github repository.](https://github.com/Shaka-Labs/ACT)
+These scripts have been simplified for single-handed use, in contrast to the bimanual focus of the original ACT repository.
+
+

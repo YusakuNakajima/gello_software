@@ -1,2 +1,3 @@
 **/__pycache__/*
 gello_ros/scripts/episode_data/*
+*.pkl
