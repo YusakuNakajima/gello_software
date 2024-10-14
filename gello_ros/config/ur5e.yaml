@@ -62,5 +62,3 @@ torque_rate:
   - 0.003
 current_goal_constant: 0.001
 
-agent_name: "gello" # "gello" or "act"
-control_hz: 100

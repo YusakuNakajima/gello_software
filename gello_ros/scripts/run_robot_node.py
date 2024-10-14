@@ -18,8 +18,8 @@ def signal_handler(sig, frame):
 
 def main():
     rospy.init_node("gello_robot_node", anonymous=True)
-    port: int = 6001
-    hostname: str = "127.0.0.1"
+    robot_port: int = rospy.get_param("~default_robot_port",6001)
+    hostname: str =  rospy.get_param("~default_hostname","127.0.0.1")
     controller_type: str = rospy.get_param("~controller_type")
     no_gripper: bool = not rospy.get_param("~use_gripper")
 
@@ -49,8 +49,8 @@ def main():
         raise NotImplementedError(
             f"Robot {robot} not implemented, choose one of: sim_ur, xarm, ur, bimanual_ur, none"
         )
-    server = ZMQServerRobot(robot, port=port, host=hostname)
-    print(f"Starting robot server on port {port}")
+    server = ZMQServerRobot(robot, port=robot_port, host=hostname)
+    print(f"Starting robot server on port {robot_port}")
     server.serve()
 
 
