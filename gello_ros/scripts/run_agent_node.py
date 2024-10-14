@@ -205,8 +205,7 @@ def main():
             action_replay = []
             state = kb_interface.update()  # update requires up to approximately 3ms
             if state == "start":
-                current_episode_number += 1
-                if current_episode_number > number_of_episodes:
+                if (current_episode_number + 1) > number_of_episodes:
                     print("All episodes done")
                     exit()
                 for i in range(number_of_steps):
@@ -226,6 +225,7 @@ def main():
 
                 print("Episode done, saving now")
                 save_episode(current_episode_number, obs_replay, action_replay)
+                current_episode_number += 1
             elif state == "normal":
                 action = agent.act(obs)
                 obs = env.step(action)
