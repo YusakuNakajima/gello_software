@@ -9,6 +9,7 @@ import pickle
 import argparse
 from copy import deepcopy
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from gello_ros.policy.utils import *
 
@@ -79,8 +80,11 @@ def train_bc(train_dataloader, val_dataloader, policy_config):
     validation_history = []
     min_val_loss = np.inf
     best_ckpt_info = None
-    for epoch in range(train_cfg["num_epochs"]):
-        print(f"\nEpoch {epoch}")
+
+    # Add tqdm for epoch progress
+    for epoch in tqdm(range(train_cfg["num_epochs"]), desc="Epoch Progress"):
+        # print(f"\nEpoch {epoch}")
+
         # validation
         with torch.inference_mode():
             policy.eval()
@@ -95,11 +99,11 @@ def train_bc(train_dataloader, val_dataloader, policy_config):
             if epoch_val_loss < min_val_loss:
                 min_val_loss = epoch_val_loss
                 best_ckpt_info = (epoch, min_val_loss, deepcopy(policy.state_dict()))
-        print(f"Val loss:   {epoch_val_loss:.5f}")
+        # print(f"Val loss:   {epoch_val_loss:.5f}")
         summary_string = ""
         for k, v in epoch_summary.items():
             summary_string += f"{k}: {v.item():.3f} "
-        print(summary_string)
+        # print(summary_string)
 
         # training
         policy.train()
@@ -112,15 +116,16 @@ def train_bc(train_dataloader, val_dataloader, policy_config):
             optimizer.step()
             optimizer.zero_grad()
             train_history.append(detach_dict(forward_dict))
+
         epoch_summary = compute_dict_mean(
             train_history[(batch_idx + 1) * epoch : (batch_idx + 1) * (epoch + 1)]
         )
         epoch_train_loss = epoch_summary["loss"]
-        print(f"Train loss: {epoch_train_loss:.5f}")
+        # print(f"Train loss: {epoch_train_loss:.5f}")
         summary_string = ""
         for k, v in epoch_summary.items():
             summary_string += f"{k}: {v.item():.3f} "
-        print(summary_string)
+        # print(summary_string)
 
         if epoch % 200 == 0:
             ckpt_path = os.path.join(
