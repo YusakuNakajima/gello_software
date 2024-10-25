@@ -1,4 +1,4 @@
-from train_config import (
+from policy_config import (
     POLICY_CONFIG,
     TASK_CONFIG,
     TRAIN_CONFIG,

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+import os
 import signal
 import sys
 import datetime
+import argparse
 import glob
 import time
 from dataclasses import dataclass, field
@@ -9,7 +11,12 @@ from pathlib import Path
 from typing import Optional, Tuple, List
 
 import numpy as np
-
+from policy_config import (
+    POLICY_CONFIG,
+    TASK_CONFIG,
+    TRAIN_CONFIG,
+    ROBOT_PORTS,
+)  # must import first
 from gello_ros.agents.agent import BimanualAgent, DummyAgent
 from gello_ros.agents.gello_agent import GelloAgent
 from gello_ros.data_utils.save_episode import save_episode
@@ -18,6 +25,7 @@ from gello_ros.env import RobotEnv
 from gello_ros.robots.robot import PrintRobot
 from gello_ros.zmq_core.robot_node import ZMQClientRobot
 from gello_ros.zmq_core.camera_node import ZMQClientCamera
+from gello_ros.policy.utils import *
 import rospy
 from geometry_msgs.msg import Wrench
 
@@ -38,9 +46,6 @@ def print_color(*args, color=None, attrs=(), **kwargs):
     if len(args) > 0:
         args = tuple(termcolor.colored(arg, color=color, attrs=attrs) for arg in args)
     print(*args, **kwargs)
-
-
-# def save_episode(save_path,  obs, action):
 
 
 def main():
@@ -65,6 +70,7 @@ def main():
     gello_port: str = rospy.get_param("~gello_port", None)
     number_of_episodes: int = rospy.get_param("~number_of_episodes", 1)
     number_of_steps: int = rospy.get_param("~number_of_steps", 300)
+    task_name: str = rospy.get_param("~task_name", "cup_push")
 
     if use_save_interface:
         kb_interface = KBReset()
@@ -119,6 +125,25 @@ def main():
         agent = SpacemouseAgent(robot_type=robot_type, verbose=verbose)
     elif agent == "dummy" or agent == "none":
         agent = DummyAgent(num_dofs=robot_client.num_dofs())
+    elif agent == "act":
+        # load config
+        cfg = TASK_CONFIG
+        policy_config = POLICY_CONFIG
+        train_cfg = TRAIN_CONFIG
+        device = os.environ["DEVICE"]
+        # load the policy
+        ckpt_path = os.path.join(
+            train_cfg["checkpoint_dir"], train_cfg["eval_ckpt_name"]
+        )
+        policy = make_policy(policy_config["policy_class"], policy_config)
+        # loading_status = policy.load_state_dict(
+        #     torch.load(ckpt_path, map_location=torch.device(device))
+        # )
+        # print(loading_status)
+        # policy.to(device)
+        # policy.eval()
+        print("Loading is done")
+        exit()
     elif agent == "policy":
         raise NotImplementedError("add your imitation policy here if there is one")
     else:
