@@ -27,7 +27,7 @@ ROBOT_PORTS = {
 # task config (you can add new tasks)
 TASK_CONFIG = {
     "dataset_dir": "/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/episode_data/20241014_183640",
-    "episode_len": 400,
+    "episode_len": 1000,
     "state_dim": 6,
     "action_dim": 6,
     "cam_width": 640,

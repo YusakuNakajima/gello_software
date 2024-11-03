@@ -52,7 +52,7 @@ def print_color(*args, color=None, attrs=(), **kwargs):
 def main():
     rospy.init_node("gello_agent_node", anonymous=True)
 
-    agent: str = rospy.get_param("~agent_name", "gello")
+    agent_name: str = rospy.get_param("~agent_name", "gello")
     hostname: str = rospy.get_param("~default_hostname", "127.0.0.1")
     robot_port: int = rospy.get_param("~default_robot_port", 6001)
     camera_port: int = rospy.get_param("~default_camera_port", 7001)
@@ -70,7 +70,7 @@ def main():
     verbose: bool = False
     gello_port: str = rospy.get_param("~gello_port", None)
     number_of_episodes: int = rospy.get_param("~number_of_episodes", 1)
-    number_of_steps: int = rospy.get_param("~number_of_steps", 300)
+    number_of_steps: int = rospy.get_param("~number_of_steps", 1000)
     task_name: str = rospy.get_param("~task_name", "cup_push")
 
     if use_save_interface:
@@ -88,7 +88,7 @@ def main():
         robot_client = ZMQClientRobot(port=robot_port, host=hostname)
     env = RobotEnv(robot_client, control_rate_hz=hz, camera_dict=camera_clients)
 
-    if agent == "gello":
+    if agent_name == "gello":
         print("Using Gello agent")
         gello_port = gello_port
         if gello_port is None:
@@ -116,17 +116,77 @@ def main():
                 env.step(jnt)
                 time.sleep(0.001)
 
-    elif agent == "quest":
+        # preprocess the agent start position
+        agent_start_pos = agent.act(env.get_obs())
+        print(f"Gello agent start pos: {agent_start_pos}")
+
+        # check if the joints are close
+        abs_deltas = np.abs(agent_start_pos - robot_joints)
+        id_max_joint_delta = np.argmax(abs_deltas)
+        print(f"Agent start pos: {agent_start_pos}", f"Robot joints: {robot_joints}")
+        max_joint_delta = 0.8
+        if abs_deltas[id_max_joint_delta] > max_joint_delta:
+            print("Joint deltas are too big, please check the following joints")
+
+            id_mask = abs_deltas > max_joint_delta
+            ids = np.arange(len(id_mask))[id_mask]
+            for i, delta, joint, current_j in zip(
+                ids,
+                abs_deltas[id_mask],
+                agent_start_pos[id_mask],
+                robot_joints[id_mask],
+            ):
+                print(
+                    f"joint[{i}]: \t delta: {delta:4.3f} , leader: \t{joint:4.3f} , follower: \t{current_j:4.3f}"
+                )
+            return
+
+        assert len(agent_start_pos) == len(
+            robot_joints
+        ), f"agent output dim = {len(agent_start_pos)}, but env dim = {len(robot_joints)}"
+
+        # soft startup
+        max_delta = 0.003
+        startup_iterations = 100
+        for i in range(startup_iterations):
+            obs = env.get_obs()
+            command_joints = agent.act(obs)
+            current_joints = obs["joint_positions"]
+            delta = command_joints - current_joints
+            max_joint_delta = np.abs(delta).max()
+            if max_joint_delta > max_delta:
+                delta = delta / max_joint_delta * max_delta
+            env.step(current_joints + delta)
+            # print("start up iteration", i, "/", startup_iterations)
+
+        # check if the joints are close
+        obs = env.get_obs()
+        joints = obs["joint_positions"]
+        action = agent.act(obs)
+        if (action - joints > 0.5).any():
+            print("Action is too big")
+            print("action", action)
+            print("jpints", joints)
+
+            # print which joints are too big
+            joint_index = np.where(action - joints > 0.8)
+            for j in joint_index:
+                print(
+                    f"Joint [{j}], leader: {action[j]}, follower: {joints[j]}, diff: {action[j] - joints[j]}"
+                )
+            exit()
+
+    elif agent_name == "quest":
         from gello_ros.agents.quest_agent import SingleArmQuestAgent
 
         agent = SingleArmQuestAgent(robot_type=robot_type, which_hand="l")
-    elif agent == "spacemouse":
+    elif agent_name == "spacemouse":
         from gello_ros.agents.spacemouse_agent import SpacemouseAgent
 
         agent = SpacemouseAgent(robot_type=robot_type, verbose=verbose)
-    elif agent == "dummy" or agent == "none":
+    elif agent_name == "dummy" or agent_name == "none":
         agent = DummyAgent(num_dofs=robot_client.num_dofs())
-    elif agent == "act":
+    elif agent_name == "act":
         # load config
         cfg = TASK_CONFIG
         policy_config = POLICY_CONFIG
@@ -146,76 +206,17 @@ def main():
         policy.to(device)
         policy.eval()
         print("ACT policy loaded")
-        agent = ACTAgent(policy, camera_names)
-    elif agent == "policy":
+        agent = ACTAgent(
+            policy, camera_names, train_cfg, policy_config, task_cfg=cfg, device=device
+        )
+    elif agent_name == "policy":
         raise NotImplementedError("add your imitation policy here if there is one")
     else:
         raise ValueError("Invalid agent name")
 
-    # going to start position
-    print("Going to start position")
-    agent_start_pos = agent.act(env.get_obs())
-    print(f"Agent start pos: {agent_start_pos}")
     obs = env.get_obs()
     robot_joints = obs["joint_positions"]
-
-    # check if the joints are close
-    print(agent_start_pos)
-    print(robot_joints)
-    abs_deltas = np.abs(agent_start_pos - robot_joints)
-    id_max_joint_delta = np.argmax(abs_deltas)
-    print(f"Agent start pos: {agent_start_pos}", f"Robot joints: {robot_joints}")
-    max_joint_delta = 0.8
-    if abs_deltas[id_max_joint_delta] > max_joint_delta:
-        print("Joint deltas are too big, please check the following joints")
-
-        id_mask = abs_deltas > max_joint_delta
-        ids = np.arange(len(id_mask))[id_mask]
-        for i, delta, joint, current_j in zip(
-            ids,
-            abs_deltas[id_mask],
-            agent_start_pos[id_mask],
-            robot_joints[id_mask],
-        ):
-            print(
-                f"joint[{i}]: \t delta: {delta:4.3f} , leader: \t{joint:4.3f} , follower: \t{current_j:4.3f}"
-            )
-        return
-
-    assert len(agent_start_pos) == len(
-        robot_joints
-    ), f"agent output dim = {len(agent_start_pos)}, but env dim = {len(robot_joints)}"
-
-    # soft startup
-    max_delta = 0.003
-    startup_iterations = 100
-    for i in range(startup_iterations):
-        obs = env.get_obs()
-        command_joints = agent.act(obs)
-        current_joints = obs["joint_positions"]
-        delta = command_joints - current_joints
-        max_joint_delta = np.abs(delta).max()
-        if max_joint_delta > max_delta:
-            delta = delta / max_joint_delta * max_delta
-        env.step(current_joints + delta)
-        # print("start up iteration", i, "/", startup_iterations)
-
-    # check if the joints are close
-    obs = env.get_obs()
-    joints = obs["joint_positions"]
-    action = agent.act(obs)
-    if (action - joints > 0.5).any():
-        print("Action is too big")
-        print("action", action)
-        print("jpints", joints)
-
-        # print which joints are too big
-        joint_index = np.where(action - joints > 0.8)
-        for j in joint_index:
-            print(
-                f"Joint [{j}], leader: {action[j]}, follower: {joints[j]}, diff: {action[j] - joints[j]}"
-            )
-        exit()
+    print(f"Robot joints: {robot_joints}")
 
     print_color("\nStart 🚀🚀🚀", color="green", attrs=("bold",))
 
@@ -262,7 +263,20 @@ def main():
                 exit()
             else:
                 raise ValueError(f"Invalid state {state}")
+        elif agent_name == "act":
+            for t in range(number_of_steps):
+                num = time.time() - start_time
+                message = f"\rTime passed: {round(num, 2)} Step: {t}   "
+                print_color(
+                    message,
+                    color="white",
+                    attrs=("bold",),
+                    end="",
+                    flush=True,
+                )
 
+                action = agent.act(obs, t)
+                obs = env.step(action)
         else:
             num = time.time() - start_time
             message = f"\rTime passed: {round(num, 2)}          "
