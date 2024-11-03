@@ -61,8 +61,8 @@ class ACTAgent(Agent):
             self.query_frequency = 1
             self.all_time_actions = torch.zeros(
                 [
-                    task_cfg["episode_len"],
-                    task_cfg["episode_len"] + policy_config["num_queries"],
+                    task_cfg["num_steps"],
+                    task_cfg["num_steps"], + policy_config["num_queries"],
                     task_cfg["state_dim"],
                 ],
                 device=device,

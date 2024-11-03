@@ -17,17 +17,12 @@ if torch.cuda.is_available():
 # if torch.backends.mps.is_available(): device = 'mps'
 os.environ["DEVICE"] = device
 
-# robot port names
-ROBOT_PORTS = {
-    "leader": "/dev/tty.usbmodem57380045221",
-    "follower": "/dev/tty.usbmodem57380046991",
-}
 
 
 # task config (you can add new tasks)
 TASK_CONFIG = {
     "dataset_dir": "/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/episode_data/20241014_183640",
-    "episode_len": 1000,
+    "num_steps": 1000,
     "state_dim": 6,
     "action_dim": 6,
     "cam_width": 640,
@@ -41,7 +36,7 @@ TASK_CONFIG = {
 POLICY_CONFIG = {
     "lr": 1e-5,
     "device": device,
-    "num_queries": 100,
+    "num_queries": 100, # get the last 100 actions from the policy
     "kl_weight": 10,
     "hidden_dim": 512,
     "dim_feedforward": 3200,
@@ -58,7 +53,7 @@ POLICY_CONFIG = {
 # training config
 TRAIN_CONFIG = {
     "seed": 42,
-    "num_epochs": 2000,
+    "num_epochs": 2000, # number of training epochs
     "batch_size_val": 8,
     "batch_size_train": 8,
     "eval_ckpt_name": "policy_last.ckpt",
