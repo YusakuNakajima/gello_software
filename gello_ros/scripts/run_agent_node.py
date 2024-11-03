@@ -19,6 +19,7 @@ from policy_config import (
 )  # must import first
 from gello_ros.agents.agent import BimanualAgent, DummyAgent
 from gello_ros.agents.gello_agent import GelloAgent
+from gello_ros.agents.act_agent import ACTAgent
 from gello_ros.data_utils.save_episode import save_episode
 from gello_ros.data_utils.keyboard_interface import KBReset
 from gello_ros.env import RobotEnv
@@ -133,17 +134,19 @@ def main():
         device = os.environ["DEVICE"]
         # load the policy
         ckpt_path = os.path.join(
-            train_cfg["checkpoint_dir"], train_cfg["eval_ckpt_name"]
+            train_cfg["checkpoint_dir"], task_name, train_cfg["eval_ckpt_name"]
         )
         policy = make_policy(policy_config["policy_class"], policy_config)
-        # loading_status = policy.load_state_dict(
-        #     torch.load(ckpt_path, map_location=torch.device(device))
-        # )
-        # print(loading_status)
-        # policy.to(device)
-        # policy.eval()
-        print("Loading is done")
-        exit()
+        print("Loading checkpoint")
+        print(ckpt_path)
+        loading_status = policy.load_state_dict(
+            torch.load(ckpt_path, map_location=torch.device(device))
+        )
+        print(loading_status)
+        policy.to(device)
+        policy.eval()
+        print("ACT policy loaded")
+        agent = ACTAgent(policy, camera_names)
     elif agent == "policy":
         raise NotImplementedError("add your imitation policy here if there is one")
     else:
