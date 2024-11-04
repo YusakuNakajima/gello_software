@@ -18,7 +18,6 @@ if torch.cuda.is_available():
 os.environ["DEVICE"] = device
 
 
-
 # task config (you can add new tasks)
 TASK_CONFIG = {
     "dataset_dir": "/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/episode_data/20241014_183640",
@@ -36,7 +35,7 @@ TASK_CONFIG = {
 POLICY_CONFIG = {
     "lr": 1e-5,
     "device": device,
-    "num_queries": 100, # get the last 100 actions from the policy
+    "num_queries": 100,  # get the last 100 actions from the policy
     "kl_weight": 10,
     "hidden_dim": 512,
     "dim_feedforward": 3200,
@@ -53,7 +52,7 @@ POLICY_CONFIG = {
 # training config
 TRAIN_CONFIG = {
     "seed": 42,
-    "num_epochs": 2000, # number of training epochs
+    "num_epochs": 2000,  # number of training epochs
     "batch_size_val": 8,
     "batch_size_train": 8,
     "eval_ckpt_name": "policy_last.ckpt",

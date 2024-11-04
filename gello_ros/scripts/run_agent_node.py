@@ -15,7 +15,6 @@ from policy_config import (
     POLICY_CONFIG,
     TASK_CONFIG,
     TRAIN_CONFIG,
-    ROBOT_PORTS,
 )  # must import first
 from gello_ros.agents.agent import BimanualAgent, DummyAgent
 from gello_ros.agents.gello_agent import GelloAgent
