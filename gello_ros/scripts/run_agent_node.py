@@ -106,6 +106,13 @@ def main():
             port=gello_port, start_joints=gello_reset_joints, mode=gello_mode
         )
         time.sleep(1)
+
+        # Start the gello agent
+
+        obs = env.get_obs()
+        robot_joints = obs["joint_positions"]
+        print(f"Robot joints: {robot_joints}")
+
         gello_curr_joints = np.array(env.get_obs()["joint_positions"])
 
         if gello_reset_joints.shape == gello_curr_joints.shape:
@@ -208,14 +215,11 @@ def main():
         agent = ACTAgent(
             policy, camera_names, train_cfg, policy_config, task_cfg=cfg, device=device
         )
+        obs = env.get_obs()
     elif agent_name == "policy":
         raise NotImplementedError("add your imitation policy here if there is one")
     else:
         raise ValueError("Invalid agent name")
-
-    obs = env.get_obs()
-    robot_joints = obs["joint_positions"]
-    print(f"Robot joints: {robot_joints}")
 
     print_color("\nStart 🚀🚀🚀", color="green", attrs=("bold",))
 
