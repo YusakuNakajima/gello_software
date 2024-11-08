@@ -35,8 +35,7 @@ class ACTAgent(Agent):
 
         # Load dataset statistics
         stats_path = os.path.join(
-            train_cfg["checkpoint_dir"],
-            rospy.get_param("~task_name"),
+            rospy.get_param("~eval_ckpt_dir"),
             "dataset_stats.pkl",
         )
 
@@ -62,7 +61,8 @@ class ACTAgent(Agent):
             self.all_time_actions = torch.zeros(
                 [
                     task_cfg["num_steps"],
-                    task_cfg["num_steps"], + policy_config["num_queries"],
+                    task_cfg["num_steps"],
+                    +policy_config["num_queries"],
                     task_cfg["state_dim"],
                 ],
                 device=device,

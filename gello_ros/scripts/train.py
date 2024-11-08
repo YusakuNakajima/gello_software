@@ -10,6 +10,7 @@ import argparse
 from copy import deepcopy
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import datetime
 
 from gello_ros.policy.utils import *
 
@@ -23,7 +24,8 @@ task = args.task
 task_cfg = TASK_CONFIG
 train_cfg = TRAIN_CONFIG
 policy_config = POLICY_CONFIG
-checkpoint_dir = os.path.join(train_cfg["checkpoint_dir"], task)
+timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+checkpoint_dir = os.path.join(train_cfg["checkpoint_dir"], timestamp + "_" + task)
 
 # device
 device = os.environ["DEVICE"]
@@ -150,7 +152,7 @@ if __name__ == "__main__":
     # create ckpt dir if not exists
     os.makedirs(checkpoint_dir, exist_ok=True)
     # number of training episodes
-    data_dir = os.path.join(task_cfg["dataset_dir"], task)
+    data_dir = task_cfg["dataset_dir"]
     num_episodes = len(os.listdir(data_dir))
 
     # load data

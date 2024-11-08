@@ -71,6 +71,7 @@ def main():
     number_of_episodes: int = rospy.get_param("~number_of_episodes", 1)
     number_of_steps: int = rospy.get_param("~number_of_steps", 1000)
     task_name: str = rospy.get_param("~task_name", "cup_push")
+    eval_ckpt_dir: str = rospy.get_param("~eval_ckpt_dir", "policy_last.ckpt")
 
     if use_save_interface:
         kb_interface = KBReset()
@@ -199,14 +200,11 @@ def main():
         train_cfg = TRAIN_CONFIG
         device = os.environ["DEVICE"]
         # load the policy
-        ckpt_path = os.path.join(
-            train_cfg["checkpoint_dir"], task_name, train_cfg["eval_ckpt_name"]
-        )
         policy = make_policy(policy_config["policy_class"], policy_config)
-        print("Loading checkpoint")
-        print(ckpt_path)
+        eval_ckpt_file = os.path.join(eval_ckpt_dir, "policy_last.ckpt")
+        print("Loading checkpoint: ", eval_ckpt_file)
         loading_status = policy.load_state_dict(
-            torch.load(ckpt_path, map_location=torch.device(device))
+            torch.load(eval_ckpt_file, map_location=torch.device(device))
         )
         print(loading_status)
         policy.to(device)
