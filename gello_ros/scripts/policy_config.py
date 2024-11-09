@@ -17,13 +17,13 @@ os.environ["DEVICE"] = device
 
 # task config (you can add new tasks)
 TASK_CONFIG = {
-    "dataset_dir": "/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/episode_data/20241107_205414_cup_push",
+    "dataset_dir": "/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/episode_data/20241108_181613_cup_in_and_push",
     "num_steps": 1000,
     "state_dim": 6,
     "action_dim": 6,
     "cam_width": 640,
     "cam_height": 480,
-    "camera_names": ["base_rgb"],
+    "camera_names": ["base_rgb", "side_rgb"],
     "camera_port": 0,
 }
 
@@ -41,7 +41,7 @@ POLICY_CONFIG = {
     "enc_layers": 4,
     "dec_layers": 7,
     "nheads": 8,
-    "camera_names": ["base_rgb"],
+    "camera_names": ["base_rgb", "side_rgb"],
     "policy_class": "ACT",
     "temporal_agg": False,
 }
