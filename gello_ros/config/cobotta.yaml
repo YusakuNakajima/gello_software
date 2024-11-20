@@ -32,10 +32,16 @@ joint_pos_limits_upper:
 
 move_group_name: "arm"
 joint_trajectory_controller_command_topic: "/cobotta/arm_controller/command"
+cartesian_compliance_controller_command_topic: "/target_frame"
+cartesian_motion_controller_command_topic: "/target_frame"
+ee_link: "pestle_tip"
 joint_states_topic: "/joint_states"
-controller_type: "joint_trajectory_controller" 
-gello_mode: "unilateral" 
-use_gripper: True
+controller_type: "joint_trajectory_controller" # "joint_trajectory_controller" or "cartesian_compliance_controller"
+wrench_topic: "/wrench/filtered"
+gello_mode: "unilateral" # "unilateral" or "bilateral"
+use_gripper: False
+use_FT_sensor: False
+gello_port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT88YXAT-if00-port0"
 
 gello_start_joints:
   - 0.0  # joint_1
@@ -44,3 +50,14 @@ gello_start_joints:
   - 0.0  # joint_4
   - !degrees 90.0  # joint_5
   - 0.0  # joint_6
+
+stall_torque: 0.52
+stall_current: 1.5
+torque_rate:
+  - 0.003
+  - 0.003
+  - 0.003
+  - 0.003
+  - 0.003
+  - 0.003
+current_goal_constant: 0.001

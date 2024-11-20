@@ -22,13 +22,14 @@ def main():
     hostname: str = rospy.get_param("~default_hostname", "127.0.0.1")
     controller_type: str = rospy.get_param("~controller_type")
     use_gripper: bool = rospy.get_param("~use_gripper")
+    use_FT_sensor: bool = rospy.get_param("~use_FT_sensor")
 
     if controller_type == "joint_trajectory_controller":
         from gello_ros.robots.ros_joint_trajectory_control_robot import (
             JointTrajectoryControlRobot,
         )
 
-        robot = JointTrajectoryControlRobot(use_gripper)
+        robot = JointTrajectoryControlRobot(use_gripper, use_FT_sensor)
     elif controller_type == "cartesian_compliance_controller":
         from gello_ros.robots.ros_cartesian_compliance_control_robot import (
             CartesianComplianceControlRobot,
