@@ -75,7 +75,7 @@ PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
             3 * np.pi / 2,
         ),
         joint_signs=(1, 1, -1, 1, -1, 1),
-        gripper_config=None,  # (7, 96, 54),
+        gripper_config=(7, 96, 54),
     ),
     # FR3
     # "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0": DynamixelRobotConfig(
@@ -107,14 +107,17 @@ class GelloAgent(Agent):
         mode: Optional[str] = "unilateral_position",
     ):
         if dynamixel_config is not None:
+            if rospy.get_param("~use_gripper", False) == False:
+                dynamixel_config.gripper_config = None
             self._robot = dynamixel_config.make_robot(
                 port=port, start_joints=start_joints
             )
         else:
             assert os.path.exists(port), port
             assert port in PORT_CONFIG_MAP, f"Port {port} not in config map"
-
             config = PORT_CONFIG_MAP[port]
+            if rospy.get_param("~use_gripper", False) == False:
+                config.gripper_config = None
             self._robot = config.make_robot(port=port, start_joints=start_joints)
         self._mode = mode
 
