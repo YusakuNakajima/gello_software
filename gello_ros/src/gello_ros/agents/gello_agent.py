@@ -49,94 +49,35 @@ class DynamixelRobotConfig:
 
 
 PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
-    # xArm
-    # "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT3M9NVB-if00-port0": DynamixelRobotConfig(
-    #     joint_ids=(1, 2, 3, 4, 5, 6, 7),
-    #     joint_offsets=(
-    #         2 * np.pi / 2,
-    #         2 * np.pi / 2,
-    #         2 * np.pi / 2,
-    #         2 * np.pi / 2,
-    #         -1 * np.pi / 2 + 2 * np.pi,
-    #         1 * np.pi / 2,
-    #         1 * np.pi / 2,
-    #     ),
-    #     joint_signs=(1, 1, 1, 1, 1, 1, 1),
-    #     gripper_config=(8, 279, 279 - 50),
-    # ),
-    # panda
-    # "/dev/cu.usbserial-FT3M9NVB": DynamixelRobotConfig(
-    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT3M9NVB-if00-port0": DynamixelRobotConfig(
-        joint_ids=(1, 2, 3, 4, 5, 6, 7),
-        joint_offsets=(
-            3 * np.pi / 2,
-            2 * np.pi / 2,
-            1 * np.pi / 2,
-            4 * np.pi / 2,
-            -2 * np.pi / 2 + 2 * np.pi,
-            3 * np.pi / 2,
-            4 * np.pi / 2,
-        ),
-        joint_signs=(1, -1, 1, 1, 1, -1, 1),
-        gripper_config=(8, 195, 152),
-    ),
-    # Left UR
-    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBEIA-if00-port0": DynamixelRobotConfig(
-        joint_ids=(1, 2, 3, 4, 5, 6),
-        joint_offsets=(
-            0,
-            1 * np.pi / 2 + np.pi,
-            np.pi / 2 + 0 * np.pi,
-            0 * np.pi + np.pi / 2,
-            np.pi - 2 * np.pi / 2,
-            -1 * np.pi / 2 + 2 * np.pi,
-        ),
-        joint_signs=(1, 1, -1, 1, 1, 1),
-        gripper_config=(7, 20, -22),
-    ),
-    # Right UR
-    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6A-if00-port0": DynamixelRobotConfig(
-        joint_ids=(1, 2, 3, 4, 5, 6),
-        joint_offsets=(
-            np.pi + 0 * np.pi,
-            2 * np.pi + np.pi / 2,
-            2 * np.pi + np.pi / 2,
-            2 * np.pi + np.pi / 2,
-            1 * np.pi,
-            3 * np.pi / 2,
-        ),
-        joint_signs=(1, 1, -1, 1, 1, 1),
-        gripper_config=(7, 286, 248),
-    ),
-    # Onolab UR
-    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0": DynamixelRobotConfig(
-        joint_ids=(1, 2, 3, 4, 5, 6),
-        joint_offsets=(
-            6 * np.pi / 2,
-            3 * np.pi / 2,
-            2 * np.pi / 2,
-            3 * np.pi / 2,
-            1 * np.pi / 2,
-            0 * np.pi / 2,
-        ),
-        joint_signs=(1, 1, -1, 1, 1, 1),
-        gripper_config=None,  # (7, 113.091015625, 71.291015625),
-    ),
-    # Onolab Cobotta
-    # "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT88YXAT-if00-port0": DynamixelRobotConfig(
+    # UR
+    # "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0": DynamixelRobotConfig(
     #     joint_ids=(1, 2, 3, 4, 5, 6),
     #     joint_offsets=(
+    #         6 * np.pi / 2,
     #         3 * np.pi / 2,
-    #         4 * np.pi / 2,
     #         2 * np.pi / 2,
-    #         4 * np.pi / 2,
     #         3 * np.pi / 2,
-    #         3 * np.pi / 2,
+    #         1 * np.pi / 2,
+    #         0 * np.pi / 2,
     #     ),
-    #     joint_signs=(1, -1, 1, 1, -1, 1),
-    #     gripper_config=(7, 96, 54),
+    #     joint_signs=(1, 1, -1, 1, 1, 1),
+    #     gripper_config=None,  # (7, 113.091015625, 71.291015625),
     # ),
-    # Onolab FR3
+    # Cobotta
+    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT88YXAT-if00-port0": DynamixelRobotConfig(
+        joint_ids=(1, 2, 3, 4, 5, 6),
+        joint_offsets=(
+            3 * np.pi / 2,
+            4 * np.pi / 2,
+            2 * np.pi / 2,
+            0 * np.pi / 2,
+            3 * np.pi / 2,
+            3 * np.pi / 2,
+        ),
+        joint_signs=(1, 1, -1, 1, -1, 1),
+        gripper_config=None,  # (7, 96, 54),
+    ),
+    # FR3
     # "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT8ISUQE-if00-port0": DynamixelRobotConfig(
     #     joint_ids=(1, 2, 3, 4, 5, 6),
     #     joint_offsets=(
@@ -211,7 +152,7 @@ class GelloAgent(Agent):
             ).astype(int)
             self._robot.command_joint_torque(dynamixel_current_goals)
 
-        # dynamixel_joints[4] += np.pi / 4  # for DENSO robot
+        dynamixel_joints[4] += np.pi / 4  # for DENSO robot
         return dynamixel_joints
         # current_q = dynamixel_joints[:-1]  # last one dim is the gripper
         current_gripper = dynamixel_joints[-1]  # last one dim is the gripper
