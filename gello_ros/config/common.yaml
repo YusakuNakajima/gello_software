@@ -1,0 +1,22 @@
+# operation config
+default_hostname: "127.0.0.1"
+default_robot_port: 6001
+control_hz: 50
+
+# camera config
+default_camera_port: 7001  # If there are multiple cameras, use consecutive numbers
+camera_names: ["base","side"]
+camera_height: 480
+camera_width: 640
+camera_fps: 60
+
+# imitation learning config
+task_name: "cup_in_and_push"
+save_episode_dir: '/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/episode_data'
+eval_ckpt_dir: '/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/checkpoints/20241108_183855_cup_in_and_push'
+number_of_episodes: 20 # trials
+number_of_steps: 1000 # steps for each episode
+state_dim: 6
+action_dim: 6
+
+

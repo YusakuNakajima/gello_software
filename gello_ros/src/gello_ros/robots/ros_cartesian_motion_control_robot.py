@@ -1,5 +1,5 @@
 from typing import Dict
-import time
+
 import numpy as np
 
 from gello_ros.robots.robot import Robot
@@ -14,7 +14,7 @@ from ur_pykdl import ur_kinematics
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
-class CartesianComplianceControlRobot(Robot):
+class CartesianMotionControlRobot(Robot):
     """A class representing a UR robot."""
 
     def __init__(
@@ -35,7 +35,7 @@ class CartesianComplianceControlRobot(Robot):
             queue_size=1,
         )
         self.cartesian_command_publisher = rospy.Publisher(
-            rospy.get_param("~cartesian_compliance_controller_command_topic"),
+            rospy.get_param("~cartesian_motion_controller_command_topic"),
             PoseStamped,
             queue_size=1,
         )
@@ -44,19 +44,15 @@ class CartesianComplianceControlRobot(Robot):
             JointState,
             self.joint_states_callback,
         )
-<<<<<<< HEAD
-        # wait for subscriber to get the first message
-        time.sleep(0.1)
-=======
         rospy.Subscriber(
             rospy.get_param("~wrench_topic"),
             WrenchStamped,
             self.wrench_callback,
         )
+        self._wrench = WrenchStamped()
         self.move_group = MoveGroupCommander(
             rospy.get_param("move_group_name", "manipulator")
         )
->>>>>>> develop
         self.kinematics = ur_kinematics()
         self.ee_link = rospy.get_param("~ee_link")
 
@@ -146,7 +142,7 @@ class CartesianComplianceControlRobot(Robot):
 
 def main():
     rospy.init_node("ros_robot")
-    ros_robot = CartesianComplianceControlRobot(use_gripper=False)
+    ros_robot = CartesianMotionControlRobot(use_gripper=False)
 
 
 if __name__ == "__main__":

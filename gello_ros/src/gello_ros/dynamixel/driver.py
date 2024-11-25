@@ -79,7 +79,7 @@ class FakeDynamixelDriver(DynamixelDriverProtocol):
     def __init__(self, ids: Sequence[int]):
         self._ids = ids
         self._joint_angles = np.zeros(len(ids), dtype=int)
-        self._joint_currents_command = np.zeros(len(ids), dtype=int)
+        self._joint_current_goals = np.zeros(len(ids), dtype=int)
         self._torque_enabled = False
 
     def set_joints(self, joint_angles: Sequence[float]):
@@ -122,7 +122,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self.read_only = read_only
         self._ids = ids
         self._joint_angles = None
-        self._joint_currents_command = np.zeros(len(ids), dtype=float)
+        self._joint_current_goals = np.zeros(len(ids), dtype=float)
         self._lock = Lock()
 
         # Initialize the port handler, packet handler, and group sync read/write
@@ -165,7 +165,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                     f"Failed to add parameter for Dynamixel with ID {dxl_id}"
                 )
         # Error check for group sync write
-        if len(self._joint_currents_command) != len(self._ids):
+        if len(self._joint_current_goals) != len(self._ids):
             raise ValueError(
                 "The length of joint_angles must match the number of servos"
             )
@@ -231,13 +231,16 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self.resume_thread()
         print(f"control mode: {self._control_mode}")
 
+    def set_read_only(self, read_only: bool):
+        self.read_only = read_only
+
     def _start_thread(self):
         self._read_and_write_thread = Thread(target=self._read_and_write)
         self._read_and_write_thread.daemon = True
         self._read_and_write_thread.start()
 
     def _write_joint_currents(self):
-        for dxl_id, current in zip(self._ids, self._joint_currents_command):
+        for dxl_id, current in zip(self._ids, self._joint_current_goals):
             current_value = int(current)
             param_current = [
                 DXL_LOBYTE(current_value),
@@ -307,11 +310,11 @@ class DynamixelDriver(DynamixelDriverProtocol):
             with self._lock:
                 if self.read_only == False:
                     self._write_joint_currents()
-                self._joint_currents = self._read_joint_currents()
                 self._joint_angles = self._read_joint_angles()
+                # self._joint_currents = self._read_joint_currents()
                 # print(f"joint angles: {self._joint_angles}")
                 # print(f"joint currents: {self._joint_currents}")
-            print(f"Time to read and write: {time.time() - st} seconds")
+            # print(f"Time to communicate with  Dynamixel: {time.time() - st} seconds")
 
     def get_joints(self) -> np.ndarray:
         # Return a copy of the joint_angles array to avoid race conditions
@@ -321,11 +324,8 @@ class DynamixelDriver(DynamixelDriverProtocol):
         _j = self._joint_angles.copy()
         return _j / 2048.0 * np.pi
 
-    def set_joint_currents(self, values: Sequence[float]):
-        self._joint_currents_command = values.copy()
-
-    def set_read_only(self, read_only: bool):
-        self.read_only = read_only
+    def set_joint_current_goals(self, values: Sequence[float]):
+        self._joint_current_goals = values.copy()
 
     def close(self):
         self._stop_event.set()

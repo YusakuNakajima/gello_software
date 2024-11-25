@@ -37,6 +37,7 @@ class DynamixelRobot(Robot):
             # joint_ids.append(gripper_config[0])
             # joint_offsets.append(0.0)
             # joint_signs.append(1)
+            start_joints = np.append(start_joints, 0)
             joint_ids = tuple(joint_ids) + (gripper_config[0],)
             joint_offsets = tuple(joint_offsets) + (0.0,)
             joint_signs = tuple(joint_signs) + (1,)
@@ -85,7 +86,6 @@ class DynamixelRobot(Robot):
             # loop through all joints and add +- 2pi to the joint offsets to get the closest to start joints
             new_joint_offsets = []
             current_joints = self.get_joint_state()
-
             assert current_joints.shape == start_joints.shape
             if gripper_config is not None:
                 current_joints = current_joints[:-1]
@@ -103,9 +103,8 @@ class DynamixelRobot(Robot):
             if gripper_config is not None:
                 new_joint_offsets.append(self._joint_offsets[-1])
             self._joint_offsets = np.array(new_joint_offsets)
-
             # self.command_joint_state(start_joints)
-            # if start_torque_on:
+            # if start_torque_on:v
             #     self.set_torque_mode(True)
 
     # def start_communication_thread(self):
@@ -139,6 +138,9 @@ class DynamixelRobot(Robot):
         self._driver.set_joints(
             list((joint_state + self._joint_offsets) * self._joint_signs)
         )
+
+    def command_joint_torque(self, joint_torque: np.ndarray) -> None:
+        self._driver.set_joint_current_goals(list(joint_torque * self._joint_signs))
 
     def set_torque_mode(self, mode: bool):
         if mode == self._torque_on:
