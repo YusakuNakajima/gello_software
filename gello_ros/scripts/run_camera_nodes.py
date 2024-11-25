@@ -4,7 +4,7 @@ import signal
 from dataclasses import dataclass
 from multiprocessing import Process
 
-from gello_ros.cameras.realsense_camera import RealSenseCamera, get_device_ids
+from gello_ros.cameras.realsense_camera import RealSenseCameraROS, get_device_ids
 from gello_ros.zmq_core.camera_node import ZMQServerCamera
 
 import rospy
@@ -24,7 +24,7 @@ def launch_server(
     width: int = 640,
     fps: int = 60,
 ):
-    camera = RealSenseCamera(device_id=camera_id, hight=hight, width=width, fps=fps)
+    camera = RealSenseCameraROS(device_id=camera_id, hight=hight, width=width, fps=fps)
     server = ZMQServerCamera(camera, port=port, host=host)
     print(f"Starting camera server on port {port}")
     server.serve()
