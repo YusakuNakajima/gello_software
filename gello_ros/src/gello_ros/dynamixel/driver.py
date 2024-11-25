@@ -310,11 +310,11 @@ class DynamixelDriver(DynamixelDriverProtocol):
             with self._lock:
                 if self.read_only == False:
                     self._write_joint_currents()
-                self._joint_currents = self._read_joint_currents()
                 self._joint_angles = self._read_joint_angles()
+                # self._joint_currents = self._read_joint_currents()
                 # print(f"joint angles: {self._joint_angles}")
                 # print(f"joint currents: {self._joint_currents}")
-            # print(f"Time to read and write: {time.time() - st} seconds")
+            # print(f"Time to communicate with  Dynamixel: {time.time() - st} seconds")
 
     def get_joints(self) -> np.ndarray:
         # Return a copy of the joint_angles array to avoid race conditions
