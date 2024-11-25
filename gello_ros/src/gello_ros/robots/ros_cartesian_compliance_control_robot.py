@@ -44,19 +44,14 @@ class CartesianComplianceControlRobot(Robot):
             JointState,
             self.joint_states_callback,
         )
-<<<<<<< HEAD
         # wait for subscriber to get the first message
         time.sleep(0.1)
-=======
         rospy.Subscriber(
             rospy.get_param("~wrench_topic"),
             WrenchStamped,
             self.wrench_callback,
         )
-        self.move_group = MoveGroupCommander(
-            rospy.get_param("move_group_name", "manipulator")
-        )
->>>>>>> develop
+
         self.kinematics = ur_kinematics()
         self.ee_link = rospy.get_param("~ee_link")
 
