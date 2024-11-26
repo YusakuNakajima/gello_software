@@ -226,6 +226,7 @@ def main():
     obs_replay = []
     action_replay = []
     current_episode_number = 0
+    last_time = time.time()
     while True:
         # st_per_step = time.time()
         if use_save_interface:
@@ -279,8 +280,8 @@ def main():
                 action = agent.act(obs, t)
                 obs = env.step(action)
         else:
-            num = time.time() - start_time
-            message = f"\rTime passed: {round(num, 2)}          "
+            message = f"\rTime passed: {round(time.time() - start_time, 2)},\tTime for step: {round((time.time() - last_time)*1000,1)} ms   "
+            last_time = time.time()
             print_color(
                 message,
                 color="white",
