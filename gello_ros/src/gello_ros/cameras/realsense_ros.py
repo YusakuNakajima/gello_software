@@ -20,35 +20,35 @@ def get_device_ids() -> List[str]:
     return device_ids
 
 
-class RealSenseCameraROS:
-    def __repr__(self) -> str:
-        return f"RealSenseCameraROS(device_id={self._device_id})"
+class RealSenseROS:
 
     def __init__(
         self,
-        device_id: Optional[str] = None,
+        prefix: Optional[str] = None,
         flip: bool = False,
     ):
-        self._device_id = device_id
         self._flip = flip
 
         self._color_image = None
         self._depth_image = None
+        if prefix is None:
+            prefix = ""
+        else:
+            prefix = prefix + "_"  # Add underscore to the prefix
 
         # ROS Subscribers
-        rospy.init_node("realsense_camera", anonymous=True)
         rospy.Subscriber(
-            "/camera/color/image_raw/compressed",
+            "/" + prefix + "camera/color/image_raw/compressed",
             CompressedImage,
             self._color_callback,
             queue_size=1,
         )
-        rospy.Subscriber(
-            "/camera/depth/image_raw/compressed",
-            CompressedImage,
-            self._depth_callback,
-            queue_size=1,
-        )
+        # rospy.Subscriber(
+        #     "/" + prefix + "/depth/image_raw/compressed",
+        #     CompressedImage,
+        #     self._depth_callback,
+        #     queue_size=1,
+        # )
         print("Subscribers initialized.")
 
     def _color_callback(self, msg: CompressedImage):
@@ -69,7 +69,7 @@ class RealSenseCameraROS:
 
     def read(self) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the latest color and depth images."""
-        return self._color_image, self._depth_image
+        return self._color_image, _  # , self._depth_image
 
 
 def _debug_read(camera, save_datastream=False):
@@ -87,7 +87,9 @@ def _debug_read(camera, save_datastream=False):
         image, depth = camera.read()
         if image is None or depth is None:
             continue
-        depth_vis = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
+        depth_vis = cv2.applyColorMap(
+            cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET
+        )
 
         key = cv2.waitKey(1)
         cv2.imshow("image", image)
