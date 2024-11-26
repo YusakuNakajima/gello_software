@@ -29,8 +29,8 @@ class RealSenseROS:
     ):
         self._flip = flip
 
-        self._color_image = None
-        self._depth_image = None
+        self._color_image = np.zeros((480, 640, 3), dtype=np.uint8)
+        self._depth_image = np.zeros((480, 640), dtype=np.uint16)
         if prefix is None:
             prefix = ""
         else:
@@ -67,9 +67,28 @@ class RealSenseROS:
             depth_image = cv2.rotate(depth_image, cv2.ROTATE_180)
         self._depth_image = depth_image
 
-    def read(self) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    def read(
+        self,
+        img_size: Optional[Tuple[int, int]] = None,
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the latest color and depth images."""
-        return self._color_image, _  # , self._depth_image
+        color_image = self._color_image
+        depth_image = self._depth_image
+        if img_size is None:
+            image = color_image[:, :, ::-1]
+            depth = depth_image
+        else:
+            image = cv2.resize(color_image, img_size)[:, :, ::-1]
+            depth = cv2.resize(depth_image, img_size)
+
+        # rotate 180 degree's because everything is upside down in order to center the camera
+        if self._flip:
+            image = cv2.rotate(image, cv2.ROTATE_180)
+            depth = cv2.rotate(depth, cv2.ROTATE_180)[:, :, None]
+        else:
+            depth = depth[:, :, None]
+
+        return image, depth
 
 
 def _debug_read(camera, save_datastream=False):
