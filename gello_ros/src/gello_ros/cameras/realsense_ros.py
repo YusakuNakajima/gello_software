@@ -29,8 +29,10 @@ class RealSenseROS:
     ):
         self._flip = flip
 
-        self._color_image = np.zeros((480, 640, 3), dtype=np.uint8)
-        self._depth_image = np.zeros((480, 640), dtype=np.uint16)
+        self._empty_color_image = np.zeros((480, 640, 3), dtype=np.uint8)
+        self._empty_depth_image = np.zeros((480, 640), dtype=np.uint16)
+
+        self._color_img_msg = None
         if prefix is None:
             prefix = ""
         else:
@@ -53,11 +55,7 @@ class RealSenseROS:
 
     def _color_callback(self, msg: CompressedImage):
         """Callback for the color image."""
-        np_arr = np.frombuffer(msg.data, np.uint8)
-        color_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-        if self._flip:
-            color_image = cv2.rotate(color_image, cv2.ROTATE_180)
-        self._color_image = color_image
+        self._color_img_msg = msg
 
     def _depth_callback(self, msg: CompressedImage):
         """Callback for the depth image."""
@@ -72,23 +70,25 @@ class RealSenseROS:
         img_size: Optional[Tuple[int, int]] = None,
     ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Get the latest color and depth images."""
-        color_image = self._color_image
-        depth_image = self._depth_image
-        if img_size is None:
-            image = color_image[:, :, ::-1]
-            depth = depth_image
-        else:
-            image = cv2.resize(color_image, img_size)[:, :, ::-1]
-            depth = cv2.resize(depth_image, img_size)
+        if self._color_img_msg is None:
+            return self._empty_color_image, self._empty_depth_image
+
+        np_arr = np.frombuffer(self._color_img_msg.data, np.uint8)
+        color_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+        # if img_size is None:
+        #     image = color_image[:, :, ::-1]
+        # else:
+        #     image = cv2.resize(color_image, img_size)[:, :, ::-1]
 
         # rotate 180 degree's because everything is upside down in order to center the camera
         if self._flip:
-            image = cv2.rotate(image, cv2.ROTATE_180)
-            depth = cv2.rotate(depth, cv2.ROTATE_180)[:, :, None]
-        else:
-            depth = depth[:, :, None]
+            color_image = cv2.rotate(color_image, cv2.ROTATE_180)
+            # depth = cv2.rotate(depth, cv2.ROTATE_180)[:, :, None]
+        # else:
+        # depth = depth[:, :, None]
 
-        return image, depth
+        return color_image, self._empty_depth_image
 
 
 def _debug_read(camera, save_datastream=False):

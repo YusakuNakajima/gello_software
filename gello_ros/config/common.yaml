@@ -1,13 +1,13 @@
 # operation config
 default_hostname: "127.0.0.1"
 default_robot_port: 6001
-control_hz: 50
+control_hz: 200
 
 # camera config
 default_camera_port: 7001 # If there are multiple cameras, use consecutive numbers
 camera_names: ["base", "side"]
-camera_height: 1280
-camera_width: 720
+camera_height: 640
+camera_width: 480
 camera_fps: 30
 
 # imitation learning config
