@@ -44,7 +44,7 @@ class DynamixelRobotConfig:
             port=port,
             gripper_config=self.gripper_config,
             start_joints=start_joints,
-            baudrate=2000000,  # 2M bps
+            baudrate=3000000,
         )
 
 

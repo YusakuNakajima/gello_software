@@ -1,5 +1,6 @@
 import time
 from threading import Event, Lock, Thread
+from concurrent.futures import ThreadPoolExecutor
 from typing import Protocol, Sequence
 
 import numpy as np
@@ -109,7 +110,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self,
         ids: Sequence[int],
         port: str = "/dev/ttyUSB0",
-        baudrate: int = 57600,
+        baudrate: int = 3000000,
         read_only: bool = False,
     ):
         """Initialize the DynamixelDriver class.
@@ -164,6 +165,14 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 raise RuntimeError(
                     f"Failed to add parameter for Dynamixel with ID {dxl_id}"
                 )
+            # Set Return Delay Time to 0μs
+            dxl_comm_result, dxl_error = self._packetHandler.write1ByteTxRx(
+                self._portHandler, dxl_id, 9, 0
+            )
+        if dxl_comm_result != COMM_SUCCESS or dxl_error != 0:
+            print(f"Failed to set Return Delay Time for Dynamixel with ID {dxl_id}")
+            print(f"dxl_comm_result: {dxl_comm_result}, dxl_error: {dxl_error}")
+
         # Error check for group sync write
         if len(self._joint_current_goals) != len(self._ids):
             raise ValueError(
@@ -303,6 +312,11 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 )
         return joint_angles
 
+    def _read_joint_angles_async(self):
+        with ThreadPoolExecutor() as executor:
+            future = executor.submit(self._read_joint_angles)
+            return future.result()
+
     def _read_and_write(self):
         while not self._stop_event.is_set():
             self._pause_event.wait()
@@ -310,11 +324,11 @@ class DynamixelDriver(DynamixelDriverProtocol):
             with self._lock:
                 if self.read_only == False:
                     self._write_joint_currents()
-                self._joint_angles = self._read_joint_angles()
+                self._joint_angles = self._read_joint_angles_async()
                 # self._joint_currents = self._read_joint_currents()
                 # print(f"joint angles: {self._joint_angles}")
                 # print(f"joint currents: {self._joint_currents}")
-            # print(f"Time to communicate with  Dynamixel: {time.time() - st} seconds")
+            print(f"Time to communicate with  Dynamixel: {time.time() - st} seconds")
 
     def get_joints(self) -> np.ndarray:
         # Return a copy of the joint_angles array to avoid race conditions
