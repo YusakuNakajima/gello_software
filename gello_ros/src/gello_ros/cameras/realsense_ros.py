@@ -31,6 +31,9 @@ class RealSenseROS:
 
         self._empty_color_image = np.zeros((480, 640, 3), dtype=np.uint8)
         self._empty_depth_image = np.zeros((480, 640), dtype=np.uint16)
+        self._color_image = np.zeros((480, 640, 3), dtype=np.uint8)
+        self._depth_image = np.zeros((480, 640), dtype=np.uint16)
+        self._color_update = False
 
         self._color_img_msg = None
         if prefix is None:
@@ -56,6 +59,7 @@ class RealSenseROS:
     def _color_callback(self, msg: CompressedImage):
         """Callback for the color image."""
         self._color_img_msg = msg
+        self._color_update = True
 
     def _depth_callback(self, msg: CompressedImage):
         """Callback for the depth image."""
@@ -72,6 +76,9 @@ class RealSenseROS:
         """Get the latest color and depth images."""
         if self._color_img_msg is None:
             return self._empty_color_image, self._empty_depth_image
+        if not self._color_update:
+            return self._color_image, self._empty_depth_image
+        self._color_update = False
 
         np_arr = np.frombuffer(self._color_img_msg.data, np.uint8)
         color_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
@@ -87,6 +94,7 @@ class RealSenseROS:
             # depth = cv2.rotate(depth, cv2.ROTATE_180)[:, :, None]
         # else:
         # depth = depth[:, :, None]
+        self._color_image = color_image
 
         return color_image, self._empty_depth_image
 
