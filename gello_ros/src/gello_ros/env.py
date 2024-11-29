@@ -13,8 +13,8 @@ class Rate:
         self.rate = rate
 
     def sleep(self) -> None:
-        while self.last + 1.0 / self.rate > time.time():
-            time.sleep(0.0001)
+        while self.last + (1.0 / self.rate) > time.time():
+            time.sleep(0.00001)
         self.last = time.time()
 
 
@@ -64,10 +64,10 @@ class RobotEnv:
             obs: observation from the environment.
         """
         observations = {}
-        for name, camera in self._camera_dict.items():
-            image, depth = camera.read()
-            observations[f"{name}_rgb"] = image
-            observations[f"{name}_depth"] = depth
+        # for name, camera in self._camera_dict.items():
+        #     image, depth = camera.read()
+        #     observations[f"{name}_rgb"] = image
+        #     observations[f"{name}_depth"] = depth
 
         robot_obs = self._robot.get_observations()
         assert "joint_positions" in robot_obs
