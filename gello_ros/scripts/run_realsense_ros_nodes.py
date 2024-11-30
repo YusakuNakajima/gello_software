@@ -28,7 +28,7 @@ def launch_server(
 
 
 def main():
-    rospy.init_node("gello_camera_node", anonymous=True)
+    rospy.init_node("realsense_ros_camera_node", anonymous=True)
 
     camera_host = rospy.get_param("~default_hostname", "127.0.0.1")
     camera_port = rospy.get_param("~default_camera_port", 7001)
