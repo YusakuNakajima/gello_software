@@ -2,13 +2,9 @@
 import os
 import signal
 import sys
-import datetime
-import argparse
 import glob
 import time
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import List
 
 import numpy as np
 from policy_config import (
@@ -16,7 +12,7 @@ from policy_config import (
     TASK_CONFIG,
     TRAIN_CONFIG,
 )  # must import first
-from gello_ros.agents.agent import BimanualAgent, DummyAgent
+from gello_ros.agents.agent import DummyAgent
 from gello_ros.agents.gello_agent import GelloAgent
 from gello_ros.agents.act_agent import ACTAgent
 from gello_ros.data_utils.save_episode import save_episode
@@ -30,7 +26,7 @@ import rospy
 from geometry_msgs.msg import Wrench
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-import cv2
+import threading
 
 agent = None
 
@@ -71,6 +67,26 @@ def _color_callback_side(msg: Image):
         rospy.logerr(f"Failed to convert image: {e}")
 
 
+def save_episode_thread(current_episode_number, obs_replay, action_replay):
+    save_episode(current_episode_number, obs_replay, action_replay)
+
+
+def start_subscriber():
+    global base_camera_subscriber, side_camera_subscriber
+    base_camera_subscriber = rospy.Subscriber(
+        "/base_camera/color/image_raw",
+        Image,
+        _color_callback_base,
+        queue_size=1,
+    )
+    side_camera_subscriber = rospy.Subscriber(
+        "/side_camera/color/image_raw",
+        Image,
+        _color_callback_side,
+        queue_size=1,
+    )
+
+
 def main():
     rospy.init_node("gello_agent_node", anonymous=True)
 
@@ -104,18 +120,7 @@ def main():
         camera_clients = {}
     else:
         camera_clients = {}
-        rospy.Subscriber(
-            "/base_camera/color/image_raw",
-            Image,
-            _color_callback_base,
-            queue_size=1,
-        )
-        rospy.Subscriber(
-            "/side_camera/color/image_raw",
-            Image,
-            _color_callback_side,
-            queue_size=1,
-        )
+        start_subscriber()
         # for i, cam_name in enumerate(camera_names):
         #     camera_clients[cam_name] = ZMQClientCamera(
         #         port=camera_port + i, host=hostname
@@ -292,7 +297,15 @@ def main():
                     obs_replay.append(obs)
 
                 print("Episode done, saving now")
+                base_camera_subscriber.unregister()
+                side_camera_subscriber.unregister()
                 save_episode(current_episode_number, obs_replay, action_replay)
+                start_subscriber()
+                # save_thread = threading.Thread(
+                #     target=save_episode_thread,
+                #     args=(current_episode_number, obs_replay, action_replay),
+                # )
+                # save_thread.start()
                 current_episode_number += 1
             elif state == "normal":
                 action = agent.act(obs)
