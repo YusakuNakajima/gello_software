@@ -34,7 +34,10 @@ class DynamixelRobotConfig:
         assert len(self.joint_ids) == len(self.joint_signs)
 
     def make_robot(
-        self, port: str = "/dev/ttyUSB0", start_joints: Optional[np.ndarray] = None
+        self,
+        port: str = "/dev/ttyUSB0",
+        baudrate: int = 2000000,
+        start_joints: Optional[np.ndarray] = None,
     ) -> DynamixelRobot:
         return DynamixelRobot(
             joint_ids=self.joint_ids,
@@ -44,7 +47,7 @@ class DynamixelRobotConfig:
             port=port,
             gripper_config=self.gripper_config,
             start_joints=start_joints,
-            baudrate=3000000,
+            baudrate=baudrate,
         )
 
 
@@ -106,11 +109,12 @@ class GelloAgent(Agent):
         start_joints: Optional[np.ndarray] = None,
         mode: Optional[str] = "unilateral_position",
     ):
+        baudrate = rospy.get_param("~dynamixel_baudrate", 2000000)
         if dynamixel_config is not None:
             if rospy.get_param("~use_gripper", False) == False:
                 dynamixel_config.gripper_config = None
             self._robot = dynamixel_config.make_robot(
-                port=port, start_joints=start_joints
+                port=port, baudrate=baudrate, start_joints=start_joints
             )
         else:
             assert os.path.exists(port), port
@@ -118,7 +122,9 @@ class GelloAgent(Agent):
             config = PORT_CONFIG_MAP[port]
             if rospy.get_param("~use_gripper", False) == False:
                 config.gripper_config = None
-            self._robot = config.make_robot(port=port, start_joints=start_joints)
+            self._robot = config.make_robot(
+                port=port, baudrate=baudrate, start_joints=start_joints
+            )
         self._mode = mode
 
         # Set constants for torque feedback

@@ -110,7 +110,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self,
         ids: Sequence[int],
         port: str = "/dev/ttyUSB0",
-        baudrate: int = 3000000,
+        baudrate: int = 2000000,
         read_only: bool = False,
     ):
         """Initialize the DynamixelDriver class.
