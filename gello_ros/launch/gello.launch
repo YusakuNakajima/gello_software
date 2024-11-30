@@ -6,7 +6,7 @@
   <arg name="agent_name" default="gello" />
 
 
-  <node name="gello_camera_server" pkg="gello_ros" type="run_realsense_ros_nodes.py" output="screen">
+  <node name="gello_camera_server" pkg="gello_ros" type="run_realsense_nodes.py" output="screen">
     <rosparam command="load" file="$(arg robot_config)" />
     <rosparam command="load" file="$(arg common_config)" />
   </node>
