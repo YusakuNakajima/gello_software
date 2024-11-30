@@ -28,6 +28,9 @@ from gello_ros.zmq_core.camera_node import ZMQClientCamera
 from gello_ros.policy.utils import *
 import rospy
 from geometry_msgs.msg import Wrench
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
 
 agent = None
 
@@ -46,6 +49,26 @@ def print_color(*args, color=None, attrs=(), **kwargs):
     if len(args) > 0:
         args = tuple(termcolor.colored(arg, color=color, attrs=attrs) for arg in args)
     print(*args, **kwargs)
+
+
+def _color_callback_base(msg: Image):
+    """Callback for the color image."""
+    global base_image
+    bridge = CvBridge()
+    try:
+        base_image = bridge.imgmsg_to_cv2(msg, "rgb8")
+    except Exception as e:
+        rospy.logerr(f"Failed to convert image: {e}")
+
+
+def _color_callback_side(msg: Image):
+    """Callback for the color image."""
+    global side_image
+    bridge = CvBridge()
+    try:
+        side_image = bridge.imgmsg_to_cv2(msg, "rgb8")
+    except Exception as e:
+        rospy.logerr(f"Failed to convert image: {e}")
 
 
 def main():
@@ -81,10 +104,22 @@ def main():
         camera_clients = {}
     else:
         camera_clients = {}
-        for i, cam_name in enumerate(camera_names):
-            camera_clients[cam_name] = ZMQClientCamera(
-                port=camera_port + i, host=hostname
-            )
+        rospy.Subscriber(
+            "/base_camera/color/image_raw",
+            Image,
+            _color_callback_base,
+            queue_size=1,
+        )
+        rospy.Subscriber(
+            "/side_camera/color/image_raw",
+            Image,
+            _color_callback_side,
+            queue_size=1,
+        )
+        # for i, cam_name in enumerate(camera_names):
+        #     camera_clients[cam_name] = ZMQClientCamera(
+        #         port=camera_port + i, host=hostname
+        #     )
         robot_client = ZMQClientRobot(port=robot_port, host=hostname)
     env = RobotEnv(robot_client, control_rate_hz=hz, camera_dict=camera_clients)
 
@@ -251,6 +286,8 @@ def main():
                     )
                     action = agent.act(obs)
                     obs = env.step(action)
+                    obs["base_rgb"] = base_image
+                    obs["side_rgb"] = side_image
                     action_replay.append(action)
                     obs_replay.append(obs)
 
@@ -279,6 +316,8 @@ def main():
 
                 action = agent.act(obs, t)
                 obs = env.step(action)
+                obs["base_rgb"] = base_image
+                obs["side_rgb"] = side_image
         else:
             message = f"\rTime passed: {round(time.time() - start_time, 2)},\tTime for step: {round((time.time() - last_time)*1000,1)} ms   "
             last_time = time.time()
