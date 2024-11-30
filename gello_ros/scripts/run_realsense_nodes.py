@@ -20,11 +20,11 @@ def launch_server(
     host: str,
     port: int,
     camera_id: int,
-    hight: int = 480,
+    height: int = 480,
     width: int = 640,
     fps: int = 60,
 ):
-    camera = RealSenseCamera(device_id=camera_id, hight=hight, width=width, fps=fps)
+    camera = RealSenseCamera(device_id=camera_id, height=height, width=width, fps=fps)
     server = ZMQServerCamera(camera, port=port, host=host)
     print(f"Starting camera server on port {port}")
     server.serve()
@@ -36,7 +36,7 @@ def main():
     ids = get_device_ids()
     camera_host = rospy.get_param("~default_hostname", "127.0.0.1")
     camera_port = rospy.get_param("~default_camera_port", 7001)
-    hight = rospy.get_param("~camera_hight", 480)
+    height = rospy.get_param("~camera_height", 480)
     width = rospy.get_param("~camera_width", 640)
     fps = rospy.get_param("~camera_fps", 60)
     camera_servers = []
@@ -46,7 +46,7 @@ def main():
         camera_servers.append(
             Process(
                 target=launch_server,
-                args=(camera_host, camera_port, camera_id, hight, width, fps),
+                args=(camera_host, camera_port, camera_id, height, width, fps),
             )
         )
         camera_port += 1

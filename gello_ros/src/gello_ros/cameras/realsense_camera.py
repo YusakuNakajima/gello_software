@@ -28,7 +28,7 @@ class RealSenseCamera(CameraDriver):
         self,
         device_id: Optional[str] = None,
         flip: bool = False,
-        hight: int = 480,
+        height: int = 480,
         width: int = 640,
         fps: int = 60,
     ):
@@ -49,9 +49,9 @@ class RealSenseCamera(CameraDriver):
             config = rs.config()
             config.enable_device(device_id)
         print(f"Starting camera with device_id: {device_id}")
-        print(f"Camera hight: {hight}, width: {width}, fps: {fps}")
-        config.enable_stream(rs.stream.depth, width, hight, rs.format.z16, fps)
-        config.enable_stream(rs.stream.color, width, hight, rs.format.bgr8, fps)
+        print(f"Camera height: {height}, width: {width}, fps: {fps}")
+        config.enable_stream(rs.stream.depth, width, height, rs.format.z16, fps)
+        config.enable_stream(rs.stream.color, width, height, rs.format.bgr8, fps)
         self._pipeline.start(config)
         self._flip = flip
 
