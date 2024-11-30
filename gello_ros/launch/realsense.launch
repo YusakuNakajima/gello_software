@@ -7,12 +7,16 @@
     <arg name="tf_prefix_camera2" default="$(arg camera2)" />
     <arg name="initial_reset" default="true" />
     <arg name="reconnect_timeout" default="6.0" />
-    <arg name="publish_tf" default="false" />
-    <arg name="publish_odom_tf" default="false" />
-    <arg name="color_width" default="640" />
-    <arg name="color_height" default="480" />
+    <arg name="color_width" default="960" />
+    <arg name="color_height" default="540" />
     <arg name="enable_color" default="true" />
     <arg name="color_fps" default="60" />
+    <!-- To smoothly acquire color images, the enable_depth setting is required.(Not sure why,
+    though.)  -->
+    <arg name="enable_depth" default="true" />
+    <arg name="enable_confidence" default="true" />
+    <arg name="publish_tf" default="true" />
+    <arg name="publish_odom_tf" default="true" />
 
 
     <group ns="$(arg camera1)">
@@ -25,6 +29,10 @@
             <arg name="color_height" value="$(arg color_height)" />
             <arg name="enable_color" value="$(arg enable_color)" />
             <arg name="color_fps" value="$(arg color_fps)" />
+            <arg name="enable_depth" value="$(arg enable_depth)" />
+            <arg name="enable_confidence" value="$(arg enable_confidence)" />
+            <arg name="publish_tf" value="$(arg publish_tf)" />
+            <arg name="publish_odom_tf" value="$(arg publish_odom_tf)" />
         </include>
     </group>
 
@@ -38,6 +46,10 @@
             <arg name="color_height" value="$(arg color_height)" />
             <arg name="enable_color" value="$(arg enable_color)" />
             <arg name="color_fps" value="$(arg color_fps)" />
+            <arg name="enable_depth" value="$(arg enable_depth)" />
+            <arg name="enable_confidence" value="$(arg enable_confidence)" />
+            <arg name="publish_tf" value="$(arg publish_tf)" />
+            <arg name="publish_odom_tf" value="$(arg publish_odom_tf)" />
         </include>
     </group>
 

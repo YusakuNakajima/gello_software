@@ -21,8 +21,6 @@ TASK_CONFIG = {
     "num_steps": 1000,
     "state_dim": 6,
     "action_dim": 6,
-    "cam_width": 640,
-    "cam_height": 480,
     "camera_names": ["base_rgb", "side_rgb"],
     "camera_port": 0,
 }

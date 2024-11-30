@@ -6,9 +6,9 @@ control_hz: 500
 # camera config
 default_camera_port: 7001 # If there are multiple cameras, use consecutive numbers
 camera_names: ["base", "side"]
-camera_height: 640
-camera_width: 480
-camera_fps: 30
+camera_height: 960
+camera_width: 540
+camera_fps: 60
 
 # imitation learning config
 task_name: "cup_in_and_push"
