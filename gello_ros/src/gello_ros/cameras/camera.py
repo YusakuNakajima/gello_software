@@ -12,8 +12,7 @@ class CameraDriver(Protocol):
 
     def read(
         self,
-        img_size: Optional[Tuple[int, int]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray]:
         """Read a frame from the camera.
 
         Args:

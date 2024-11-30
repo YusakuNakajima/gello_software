@@ -7,19 +7,6 @@ from sensor_msgs.msg import Image, CompressedImage
 import cv2
 
 
-def get_device_ids() -> List[str]:
-    import pyrealsense2 as rs
-
-    ctx = rs.context()
-    devices = ctx.query_devices()
-    device_ids = []
-    for dev in devices:
-        dev.hardware_reset()
-        device_ids.append(dev.get_info(rs.camera_info.serial_number))
-    time.sleep(2)
-    return device_ids
-
-
 class RealSenseROS:
 
     def __init__(
@@ -27,10 +14,10 @@ class RealSenseROS:
         prefix: Optional[str] = None,
         flip: bool = False,
     ):
+
         self._flip = flip
         height = rospy.get_param("~camera_height", 480)
         width = rospy.get_param("~camera_width", 640)
-
         self._empty_color_image = np.zeros((height, width, 3), dtype=np.uint8)
         self._empty_depth_image = np.zeros((height, width), dtype=np.uint16)
         self._color_image = None
@@ -54,11 +41,12 @@ class RealSenseROS:
         #     self._depth_callback,
         #     queue_size=1,
         # )
-        print("Subscribers initialized.")
+        print("Realsense subscribers initialized.")
 
     def _color_callback(self, msg: Image):
         """Callback for the color image."""
         try:
+            rospy.loginfo("Received color image.")
             self._color_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             if self._flip:
                 self._color_image = cv2.rotate(self._color_image, cv2.ROTATE_180)
@@ -76,17 +64,9 @@ class RealSenseROS:
     def read(
         self,
         img_size: Optional[Tuple[int, int]] = None,
-    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    ) -> Tuple[Optional[np.ndarray]]:
         """Get the latest color and depth images."""
         if self._color_image is None:
-            return self._empty_color_image, self._empty_depth_image
-        return self._color_image, self._empty_depth_image
-
-
-if __name__ == "__main__":
-    device_ids = get_device_ids()
-    print(f"Found {len(device_ids)} devices")
-    print(device_ids)
-
-    rs_camera = RealSenseCameraROS(flip=True)
-    _debug_read(rs_camera, save_datastream=True)
+            rospy.logwarn("No color image received.")
+            return self._empty_color_image
+        return self._color_image

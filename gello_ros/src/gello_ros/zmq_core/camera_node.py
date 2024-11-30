@@ -20,18 +20,12 @@ class ZMQClientCamera(CameraDriver):
 
     def read(
         self,
-        img_size: Optional[Tuple[int, int]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """Get the current state of the leader robot.
+    ) -> Tuple[np.ndarray]:
+        """Request the latest camera image."""
+        image_data = self._socket.recv()
+        image = np.frombuffer(image_data, dtype=np.uint8)
 
-        Returns:
-            T: The current state of the leader robot.
-        """
-        # pack the image_size and send it to the server
-        send_message = pickle.dumps(img_size)
-        self._socket.send(send_message)
-        state_dict = pickle.loads(self._socket.recv())
-        return state_dict
+        return image
 
 
 class ZMQServerCamera:
@@ -51,18 +45,17 @@ class ZMQServerCamera:
         self._socket.bind(addr)
         self._stop_event = threading.Event()
 
-    def serve(self) -> None:
-        """Serve the leader robot state over ZMQ."""
+    def serve(self):
+        """Serve the camera images over ZMQ."""
         self._socket.setsockopt(zmq.RCVTIMEO, 1000)  # Set timeout to 1000 ms
         while not self._stop_event.is_set():
             try:
-                message = self._socket.recv()
-                img_size = pickle.loads(message)
-                camera_read = self._camera.read(img_size)
-                self._socket.send(pickle.dumps(camera_read))
-            except zmq.Again:
-                print(self._timout_message)
-                # Timeout occurred, check if the stop event is set
+                # Capture the image
+                image = self._camera.read()
+                self._socket.send(image.tobytes())
+            except KeyboardInterrupt:
+                print("Shutting down server...")
+                break
 
     def stop(self) -> None:
         """Signal the server to stop serving."""
