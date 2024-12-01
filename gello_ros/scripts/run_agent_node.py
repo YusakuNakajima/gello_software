@@ -94,6 +94,9 @@ def main():
     hz: int = rospy.get_param("~control_hz", 100)
     start_joints: List[float] = rospy.get_param("~gello_start_joints")
     gello_mode: str = rospy.get_param("~gello_mode")
+    controller_type: str = rospy.get_param("~controller_type")
+    use_gripper: bool = rospy.get_param("~use_gripper")
+    use_FT_sensor: bool = rospy.get_param("~use_FT_sensor")
 
     print(f"start_joints: {start_joints}")
 
@@ -119,8 +122,34 @@ def main():
         #     camera_clients[cam_name] = ZMQClientCamera(
         #         port=camera_port + i, host=hostname
         #     )
-        robot_client = ZMQClientRobot(port=robot_port, host=hostname)
-    env = RobotEnv(robot_client, control_rate_hz=hz, camera_dict=camera_clients)
+        # robot_client = ZMQClientRobot(port=robot_port, host=hostname)
+        if controller_type == "joint_trajectory_controller":
+            from gello_ros.robots.ros_joint_trajectory_control_robot import (
+                JointTrajectoryControlRobot,
+            )
+
+            robot = JointTrajectoryControlRobot(use_gripper, use_FT_sensor)
+        elif controller_type == "cartesian_compliance_controller":
+            from gello_ros.robots.ros_cartesian_compliance_control_robot import (
+                CartesianComplianceControlRobot,
+            )
+
+            robot = CartesianComplianceControlRobot(use_gripper)
+        elif controller_type == "cartesian_motion_controller":
+            from gello_ros.robots.ros_cartesian_motion_control_robot import (
+                CartesianMotionControlRobot,
+            )
+
+            robot = CartesianMotionControlRobot(use_gripper)
+
+        elif robot == "none" or robot == "print":
+            robot = PrintRobot(8)
+
+        else:
+            raise NotImplementedError(
+                f"Robot {robot} not implemented, choose one of: sim_ur, xarm, ur, bimanual_ur, none"
+            )
+    env = RobotEnv(robot, control_rate_hz=hz, camera_dict=camera_clients)
 
     if agent_name == "gello":
         print("Using Gello agent")
