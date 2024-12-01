@@ -5,13 +5,11 @@
   <arg name="node_start_delay" default="10.0" />
   <arg name="agent_name" default="gello" />
 
-
   <include file="$(find gello_ros)/launch/realsense.launch" />
-  <!-- <node name="gello_camera_server" pkg="gello_ros" type="run_realsense_ros_nodes.py"
-  output="screen">
+  <node name="gello_publisher" pkg="gello_ros" type="run_gello.py" output="screen">
     <rosparam command="load" file="$(arg robot_config)" />
     <rosparam command="load" file="$(arg common_config)" />
-  </node> -->
+  </node>
 
   <node name="gello_robot_server" pkg="gello_ros" type="run_robot_node.py" output="screen">
     <rosparam command="load" file="$(arg robot_config)" />

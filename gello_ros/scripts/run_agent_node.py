@@ -33,8 +33,6 @@ agent = None
 
 def signal_handler(sig, frame):
     print("Exiting...")
-    if agent is not None:
-        agent.set_torque_mode(False)
     rospy.signal_shutdown("Ctrl+C pressed")
     sys.exit(0)
 
@@ -67,11 +65,7 @@ def _color_callback_side(msg: Image):
         rospy.logerr(f"Failed to convert image: {e}")
 
 
-def save_episode_thread(current_episode_number, obs_replay, action_replay):
-    save_episode(current_episode_number, obs_replay, action_replay)
-
-
-def start_subscriber():
+def start_camera_subscriber():
     global base_camera_subscriber, side_camera_subscriber
     base_camera_subscriber = rospy.Subscriber(
         "/base_camera/color/image_raw",
@@ -120,7 +114,7 @@ def main():
         camera_clients = {}
     else:
         camera_clients = {}
-        start_subscriber()
+        start_camera_subscriber()
         # for i, cam_name in enumerate(camera_names):
         #     camera_clients[cam_name] = ZMQClientCamera(
         #         port=camera_port + i, host=hostname
@@ -143,9 +137,10 @@ def main():
                 )
 
         gello_reset_joints = np.array(start_joints)
-        agent = GelloAgent(
-            port=gello_port, start_joints=gello_reset_joints, mode=gello_mode
-        )
+        # agent = GelloAgent(
+        #     port=gello_port, start_joints=gello_reset_joints, mode=gello_mode
+        # )
+        agent = GelloAgent()
         time.sleep(1)
 
         # Start the gello agent
@@ -300,12 +295,7 @@ def main():
                 base_camera_subscriber.unregister()
                 side_camera_subscriber.unregister()
                 save_episode(current_episode_number, obs_replay, action_replay)
-                start_subscriber()
-                # save_thread = threading.Thread(
-                #     target=save_episode_thread,
-                #     args=(current_episode_number, obs_replay, action_replay),
-                # )
-                # save_thread.start()
+                start_camera_subscriber()
                 current_episode_number += 1
             elif state == "normal":
                 action = agent.act(obs)
