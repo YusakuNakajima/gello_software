@@ -19,8 +19,6 @@ from gello_ros.data_utils.save_episode import save_episode
 from gello_ros.data_utils.keyboard_interface import KBReset
 from gello_ros.env import RobotEnv
 from gello_ros.robots.robot import PrintRobot
-from gello_ros.zmq_core.robot_node import ZMQClientRobot
-from gello_ros.zmq_core.camera_node import ZMQClientCamera
 from gello_ros.policy.utils import *
 import rospy
 from geometry_msgs.msg import Wrench
