@@ -1,62 +1,68 @@
-import pygame
+import asyncio
 
-NORMAL = (128, 128, 128)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-WHITE = (255, 255, 255)
-
-KEY_START = pygame.K_s
-KEY_CONTINUE = pygame.K_c
-KEY_QUIT_RECORDING = pygame.K_q
-
-
-class KBReset:
+class KBInterface:
     def __init__(self):
-        pygame.init()
-        self._screen = pygame.display.set_mode((800, 800))
-        self._set_color(NORMAL)
+        self.state = 'pass'
 
-    def update(self) -> str:
-        pressed_last = self._get_pressed()
-        if KEY_QUIT_RECORDING in pressed_last:
-            self._set_color(RED)
-            # self._display_text("QUIT RECORDING")
-            return "quit"
+    def update(self):
+        """
+        状態を更新
+        """
+        return self.state
 
-        if KEY_START in pressed_last:
-            self._set_color(GREEN)
-            # self._display_text("START")
-            return "start"
+    async def set_start(self):
+        """
+        非同期で 'start'状態に設定
+        """
+        self.state = 'start'
+        self.update()
+        await asyncio.sleep(0.1)
+        print("Start state set.")
 
-        self._set_color(NORMAL)
-        # self._display_text("READY")
-        return "normal"
+    async def set_pass(self):
+        """
+        非同期で 'pass'状態に設定
+        """
+        self.state = 'pass'
+        self.update()
+        await asyncio.sleep(0.1)
+        print("Pass state set.")
 
-    def _get_pressed(self):
-        pressed = []
-        pygame.event.pump()
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                pressed.append(event.key)
-        return pressed
+    async def set_quit(self):
+        """
+        非同期で 'quit'状態に設定し、終了する
+        """
+        self.state = 'quit'
+        self.update()
+        await asyncio.sleep(0.1)
+        print("Quit state set.")
+        return True  # 終了を示すためにTrueを返す
 
-    def _set_color(self, color):
-        self._screen.fill(color)
-        pygame.display.flip()
+    async def handle_input(self):
+        """
+        ユーザー入力を非同期で受け付けて状態を変更
+        """
+        while True:
+            user_input = input("Enter command (start/pass/quit): ").strip().lower()
 
-    def _display_text(self, text):
-        text_surface = self._font.render(text, True, WHITE)
-        text_rect = text_surface.get_rect(center=(400, 400))
-        self._screen.blit(text_surface, text_rect)
-        pygame.display.flip()
-        
-def main():
-    kb = KBReset()
-    while True:
-        state = kb.update()
-        if state == "start":
-            print("start")
+            if user_input == "start":
+                await self.set_start()
+            elif user_input == "pass":
+                await self.set_pass()
+            elif user_input == "quit":
+                if await self.set_quit():
+                    break
+            else:
+                print("Invalid command. Please enter 'start', 'pass', or 'quit'.")
+
+    async def run(self):
+        """
+        非同期でターミナル入力を処理
+        """
+        await self.handle_input()
 
 
+# 外部から呼び出す例
 if __name__ == "__main__":
-    main()
+    kb_interface = KBInterface()
+    asyncio.run(kb_interface.run())

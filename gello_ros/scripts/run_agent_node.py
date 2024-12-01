@@ -16,7 +16,7 @@ from gello_ros.agents.agent import DummyAgent
 from gello_ros.agents.gello_agent import GelloAgent
 from gello_ros.agents.act_agent import ACTAgent
 from gello_ros.data_utils.save_episode import save_episode
-from gello_ros.data_utils.keyboard_interface import KBReset
+from gello_ros.data_utils.keyboard_interface import KBInterface
 from gello_ros.env import RobotEnv
 from gello_ros.robots.robot import PrintRobot
 from gello_ros.policy.utils import *
@@ -27,13 +27,6 @@ from cv_bridge import CvBridge
 import threading
 
 agent = None
-
-
-def signal_handler(sig, frame):
-    print("Exiting...")
-    rospy.signal_shutdown("Ctrl+C pressed")
-    sys.exit(0)
-
 
 def print_color(*args, color=None, attrs=(), **kwargs):
     import termcolor
@@ -80,7 +73,7 @@ def start_camera_subscriber():
 
 
 def main():
-    rospy.init_node("gello_agent_node", anonymous=True)
+    rospy.init_node("agent_node", anonymous=True)
 
     agent_name: str = rospy.get_param("~agent_name", "gello")
     hostname: str = rospy.get_param("~default_hostname", "127.0.0.1")
@@ -108,7 +101,9 @@ def main():
     eval_ckpt_dir: str = rospy.get_param("~eval_ckpt_dir", "policy_last.ckpt")
 
     if use_save_interface:
-        kb_interface = KBReset()
+        kb_interface = KBInterface()
+        kb_interface.run()
+
 
     if mock:
         robot_client = PrintRobot(8, dont_print=True)
@@ -116,11 +111,7 @@ def main():
     else:
         camera_clients = {}
         start_camera_subscriber()
-        # for i, cam_name in enumerate(camera_names):
-        #     camera_clients[cam_name] = ZMQClientCamera(
-        #         port=camera_port + i, host=hostname
-        #     )
-        # robot_client = ZMQClientRobot(port=robot_port, host=hostname)
+
         if controller_type == "joint_trajectory_controller":
             from gello_ros.robots.ros_joint_trajectory_control_robot import (
                 JointTrajectoryControlRobot,
@@ -289,21 +280,45 @@ def main():
     action_replay = []
     current_episode_number = 0
     last_time = time.time()
-    while True:
-        # st_per_step = time.time()
-        if use_save_interface:
-            start_time = time.time()
-            # init buffers
-            obs_replay = []
-            action_replay = []
-            state = kb_interface.update()  # update requires up to approximately 3ms
-            if state == "start":
-                if (current_episode_number + 1) > number_of_episodes:
-                    print("All episodes done")
-                    exit()
-                for i in range(number_of_steps):
+    try:
+        while not rospy.is_shutdown():
+            if use_save_interface:
+                state = kb_interface.update()
+                print(f"State: {state}")
+                if state == "start":
+                    if (current_episode_number + 1) > number_of_episodes:
+                        print("All episodes done")
+                        kb_interface.stop()
+                        break
+                    for i in range(number_of_steps):
+                        num = time.time() - start_time
+                        message = f"\r Episode number: {current_episode_number} Time passed: {round(num, 2)}          "
+                        print(message, end="", flush=True)
+                        action = agent.act(obs)
+                        obs = env.step(action)
+                        obs["base_rgb"] = base_image
+                        obs["side_rgb"] = side_image
+                        action_replay.append(action)
+                        obs_replay.append(obs)
+
+                    print("Episode done, saving now")
+                    base_camera_subscriber.unregister()
+                    side_camera_subscriber.unregister()
+                    save_episode(current_episode_number, obs_replay, action_replay)
+                    start_camera_subscriber()
+                    current_episode_number += 1
+                elif state == "pass":
+                    action = agent.act(obs)
+                    obs = env.step(action)
+                elif state == "quit":
+                    print("Quit episode recording")
+                    break
+                else:
+                    raise ValueError(f"Invalid state {state}")
+            elif agent_name == "act":
+                for t in range(number_of_steps):
                     num = time.time() - start_time
-                    message = f"\r Episode number: {current_episode_number} Time passed: {round(num, 2)}          "
+                    message = f"\rTime passed: {round(num, 2)} Step: {t}   "
                     print_color(
                         message,
                         color="white",
@@ -311,31 +326,14 @@ def main():
                         end="",
                         flush=True,
                     )
-                    action = agent.act(obs)
+
+                    action = agent.act(obs, t)
                     obs = env.step(action)
                     obs["base_rgb"] = base_image
                     obs["side_rgb"] = side_image
-                    action_replay.append(action)
-                    obs_replay.append(obs)
-
-                print("Episode done, saving now")
-                base_camera_subscriber.unregister()
-                side_camera_subscriber.unregister()
-                save_episode(current_episode_number, obs_replay, action_replay)
-                start_camera_subscriber()
-                current_episode_number += 1
-            elif state == "normal":
-                action = agent.act(obs)
-                obs = env.step(action)
-            elif state == "quit":
-                print("Quite episode recording")
-                exit()
             else:
-                raise ValueError(f"Invalid state {state}")
-        elif agent_name == "act":
-            for t in range(number_of_steps):
-                num = time.time() - start_time
-                message = f"\rTime passed: {round(num, 2)} Step: {t}   "
+                message = f"\rTime passed: {round(time.time() - start_time, 2)},\tTime for step: {round((time.time() - last_time)*1000,1)} ms   "
+                last_time = time.time()
                 print_color(
                     message,
                     color="white",
@@ -343,27 +341,13 @@ def main():
                     end="",
                     flush=True,
                 )
-
-                action = agent.act(obs, t)
+                action = agent.act(obs)
                 obs = env.step(action)
-                obs["base_rgb"] = base_image
-                obs["side_rgb"] = side_image
-        else:
-            message = f"\rTime passed: {round(time.time() - start_time, 2)},\tTime for step: {round((time.time() - last_time)*1000,1)} ms   "
-            last_time = time.time()
-            print_color(
-                message,
-                color="white",
-                attrs=("bold",),
-                end="",
-                flush=True,
-            )
-            action = agent.act(obs)
-            obs = env.step(action)
-
-        # print("Time per step", time.time() - st_per_step)
-
+    except rospy.ROSInterruptException:
+        print("ROS node interrupted")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+    
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
     main()
