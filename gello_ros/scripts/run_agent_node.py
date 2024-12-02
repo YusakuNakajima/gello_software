@@ -85,6 +85,9 @@ def start_button_subscriber():
         _button_callback,
         queue_size=1,
     )
+    
+def save_episode_thread(episode_number, obs_replay, action_replay):
+    save_episode(episode_number, obs_replay, action_replay)
 
 def main():
     rospy.init_node("agent_node", anonymous=True)
@@ -290,6 +293,7 @@ def main():
     print_color("\nStart 🚀🚀🚀", color="green", attrs=("bold",))
     start_time = time.time()
     current_episode_number = 0
+    current_save_thread = None
     message=""
     try:
         while not rospy.is_shutdown():
@@ -297,6 +301,10 @@ def main():
                 if button_state == "start":
                     obs_replay = []
                     action_replay = []
+                    if current_save_thread is not None and current_save_thread.is_alive():
+                        print("Can't start new episode, current episode is still saving")
+                        button_state = "pass"
+                        continue
                     if (current_episode_number + 1) > number_of_episodes:
                         print("All episodes done")
                         break
@@ -319,13 +327,24 @@ def main():
                         )
 
                     print("Episode done, saving now")
-                    save_episode(current_episode_number, obs_replay, action_replay)
+                    current_save_thread = threading.Thread(target=save_episode_thread, args=(current_episode_number, obs_replay, action_replay))
+                    current_save_thread.start()
+                    
                     button_state="pass"
                     current_episode_number += 1
                   
                 elif button_state == "pass":
+                    step_st = time.time()
                     action = agent.act(obs)
                     obs = env.step(action)
+                    message = f"\rWaiting for the next episode.\tTime for step: {round((time.time() - step_st)*1000,1)} ms   "
+                    print_color(
+                            message,
+                            color="white",
+                            attrs=("bold",),
+                            end="",
+                            flush=True,
+                    )
                 elif button_state == "quit":
                     print("Quit episode recording")
                     break
