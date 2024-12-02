@@ -57,7 +57,6 @@ def save_episode(episode_number, obs_replay, action_replay):
 
     # create data dir if it doesn't exist
     data_dir = os.path.join(cfg["save_episode_dir"], timestamp + "_" + cfg["task_name"])
-    print(f"Saving data to {data_dir}")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 

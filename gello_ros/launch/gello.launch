@@ -1,15 +1,23 @@
 <launch>
   <arg name="robot_config" default="$(find gello_ros)/config/ur5e.yaml" />
   <arg name="common_config" default="$(find gello_ros)/config/common.yaml" />
-  <arg name="save_episode" default="false" />
   <arg name="node_start_delay" default="10.0" />
+  <arg name="save_episode" default="false" />
   <arg name="agent_name" default="gello" />
 
   <include file="$(find gello_ros)/launch/realsense.launch" />
-  <node name="gello_publisher" pkg="gello_ros" type="run_gello.py" output="screen">
-    <rosparam command="load" file="$(arg robot_config)" />
-    <rosparam command="load" file="$(arg common_config)" />
-  </node>
+
+  <group if="$(eval arg('agent_name') == 'gello')">
+    <node name="run_gello" pkg="gello_ros" type="run_gello.py" output="screen">
+      <rosparam command="load" file="$(arg robot_config)" />
+      <rosparam command="load" file="$(arg common_config)" />
+    </node>
+  </group>
+
+  <group if="$(arg save_episode)">
+    <node name="run_gui" pkg="gello_ros" type="run_GUI.py" output="screen" />
+  </group>
+
   <node name="gello_agent" pkg="gello_ros" type="run_agent_node.py" output="screen"
     launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
     <rosparam command="load" file="$(arg robot_config)" />
@@ -17,6 +25,4 @@
     <param name="save_episode" value="$(arg save_episode)" />
     <param name="agent_name" value="$(arg agent_name)" />
   </node>
-
-
 </launch>
