@@ -56,12 +56,13 @@ class ACTAgent(Agent):
 
         # Query frequency configuration
         self.query_frequency = policy_config["num_queries"]
+        num_steps=rospy.get_param("~number_of_steps")
         if policy_config["temporal_agg"]:
             self.query_frequency = 1
             self.all_time_actions = torch.zeros(
                 [
-                    task_cfg["num_steps"],
-                    task_cfg["num_steps"],
+                    num_steps,
+                    num_steps,
                     +policy_config["num_queries"],
                     task_cfg["state_dim"],
                 ],
