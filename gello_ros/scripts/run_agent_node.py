@@ -128,6 +128,10 @@ def main():
         camera_clients = {}
     else:
         camera_clients = {}
+        global base_image
+        global side_image
+        base_image = np.zeros((480, 640, 3), dtype=np.uint8)
+        side_image = np.zeros((480, 640, 3), dtype=np.uint8)
         start_camera_subscriber()
 
         if controller_type == "joint_trajectory_controller":
@@ -285,6 +289,8 @@ def main():
             policy, camera_names, train_cfg, policy_config, task_cfg=cfg, device=device
         )
         obs = env.get_obs()
+        obs["base_rgb"] = base_image
+        obs["side_rgb"] = side_image
     elif agent_name == "policy":
         raise NotImplementedError("add your imitation policy here if there is one")
     else:
@@ -352,12 +358,13 @@ def main():
                     raise ValueError(f"Invalid state {button_state}")
             elif agent_name == "act":
                 for t in range(number_of_steps):
-                    num = time.time() - start_time
+                    time_passed = time.time() - start_time
+                    step_st = time.time()
                     action = agent.act(obs, t)
                     obs = env.step(action)
                     obs["base_rgb"] = base_image
                     obs["side_rgb"] = side_image
-                    message = f"\rTime passed: {round(num, 2)} Step: {t}   "
+                    message = f"\rTime passed: {round(time_passed, 2)} Step: {t} Time for step: {round((time.time() - step_st)*1000,1)} ms   "
                     print_color(
                         message,
                         color="white",

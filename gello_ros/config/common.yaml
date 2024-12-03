@@ -12,9 +12,9 @@ camera_height: 480
 camera_fps: 60
 
 # imitation learning config
-task_name: "cup_in_and_push"
+task_name: "cup_push"
 save_episode_dir: "/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/episode_data"
-eval_ckpt_dir: "/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/checkpoints/20241108_183855_cup_in_and_push"
+eval_ckpt_dir: "/root/onolab/catkin_ws/src/gello_software/gello_ros/scripts/checkpoints/20241202_185808_cup_push"
 number_of_episodes: 5 # trials
 number_of_steps: 10000 # steps for each episode
 state_dim: 6
