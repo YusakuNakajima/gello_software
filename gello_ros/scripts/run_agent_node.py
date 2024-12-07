@@ -16,10 +16,10 @@ from gello_ros.agents.agent import DummyAgent
 from gello_ros.agents.gello_agent import GelloAgent
 from gello_ros.agents.act_agent import ACTAgent
 from gello_ros.data_utils.save_episode import save_episode
-# from gello_ros.data_utils.keyboard_interface import KBInterface
 from gello_ros.env import RobotEnv
 from gello_ros.robots.robot import PrintRobot
 from gello_ros.policy.utils import *
+
 import rospy
 from geometry_msgs.msg import Wrench
 from sensor_msgs.msg import Image

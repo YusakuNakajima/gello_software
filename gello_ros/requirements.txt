@@ -1,0 +1,29 @@
+# for agent
+quaternion
+numpy-quaternion
+pyquaternion
+pyspacemouse
+ur-rtde
+xarm
+xarm-python-sdk
+
+
+# for learning
+pyyaml
+opencv-python
+pyrealsense2
+dynamixel-sdk
+torch
+torchvision
+torchaudio
+h5py
+
+# for debugging
+ipython
+ipywidgets
+matplotlib
+pandas
+plotly
+tqdm
+tyro
+termcolor
