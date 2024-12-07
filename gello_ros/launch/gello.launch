@@ -4,8 +4,15 @@
   <arg name="node_start_delay" default="10.0" />
   <arg name="save_episode" default="false" />
   <arg name="agent_name" default="gello" />
+  <arg name="camera_type" default="usb_cam" />
 
-  <include file="$(find gello_ros)/launch/realsense.launch" />
+  <group if="$(eval arg('camera_type') == 'realsense')">
+    <include file="$(find gello_ros)/launch/realsense.launch" />
+  </group>
+  <group if="$(eval arg('camera_type') == 'usb_cam')">
+    <include file="$(find gello_ros)/launch/usb_cam.launch" />
+  </group>
+
 
   <group if="$(eval arg('agent_name') == 'gello')">
     <node name="run_gello" pkg="gello_ros" type="run_gello.py" output="screen">
